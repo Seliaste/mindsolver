@@ -158,13 +158,19 @@ fn scan_face(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     run_for_deg(&hw.sensor_motor,-600)?;
     sensor_scan(hw,data)?;
     run_for_deg(&hw.sensor_motor,90)?;
-    for _ in 0..4 {
+    for i in 0..4 {
+        if i == 1 {
+            run_for_deg(&hw.sensor_motor,-20)?;
+        }
         sensor_scan(hw,data)?;
         rot_base45(hw)?;
-        run_for_deg(&hw.sensor_motor,60)?;
+        run_for_deg(&hw.sensor_motor,40)?;
         sensor_scan(hw,data)?;
         rot_base45(hw)?;
-        run_for_deg(&hw.sensor_motor,-60)?;
+        run_for_deg(&hw.sensor_motor,-40)?;
+        if i == 2 {
+            run_for_deg(&hw.sensor_motor,20)?;
+        }
     }
     reset_sensor_position(hw)?;
     println!("Face scan done");
@@ -216,7 +222,7 @@ fn main() -> Ev3Result<()> {
     scan_cube(&hw,&mut data)?;
     println!("Color values: {:?}",data.facelet_rgb_values);
     let solution = solve_cube("FRRUUUUUUFFDRRDRRDLLLFFFFFFDDDDDDBLLUBBULLULLBBRBBRBBR".to_string());
-    println!("{}",solution);
+    println!("Seultion is {}",solution);
     for part in solution.split_whitespace(){
         apply_solution_part(part.to_owned(), &hw, &mut data)?;
     }
