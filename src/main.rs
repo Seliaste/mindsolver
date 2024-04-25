@@ -79,8 +79,8 @@ fn rot_base90(hw: &Hardware) -> Ev3Result<()> {
 }
 
 fn flip_cube(hw: &Hardware) -> Ev3Result<()> {
-    run_for_deg(&hw.flipper_motor,200)?;
-    run_for_deg(&hw.flipper_motor,-200)?;
+    run_for_deg(&hw.flipper_motor,210)?;
+    run_for_deg(&hw.flipper_motor,-210)?;
     Ok(())
 }
 
@@ -121,6 +121,7 @@ fn solve_cube(cube_notation: String) -> String {
 
 fn apply_solution_part(part: String, hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     // TODO: Make the right face face down
+    println!("Applying part {}",part);
     let face = part.chars().nth(0).unwrap();
     if !data.next_faces.contains(&face) { // then we have to rotate
         rot_base90(hw)?;
@@ -134,20 +135,19 @@ fn apply_solution_part(part: String, hw: &Hardware, data :&mut Data) -> Ev3Resul
     while data.next_faces[0] != face {
         flip_cube(hw)?;
         data.next_faces.rotate_left(1);
-        println!("Next faces: {:?}",data.next_faces)
     }
     lock_cube(hw)?;
     if part.len() == 1 { // 90deg clockwise
         // We need to go a little further each time as the base borders are not the same width as the cube
-        run_for_rot(&hw.base_motor, 0.9)?; 
-        run_for_rot(&hw.base_motor, -0.15)?;
+        run_for_rot(&hw.base_motor, -0.925)?; 
+        run_for_rot(&hw.base_motor, 0.175)?;
     }
     else if part.ends_with('\''){ // 90 deg counterclockwise
-        run_for_rot(&hw.base_motor, -0.9)?;
-        run_for_rot(&hw.base_motor, 0.15)?;
+        run_for_rot(&hw.base_motor, 0.925)?;
+        run_for_rot(&hw.base_motor, -0.175)?;
     } else { // 180deg
-        run_for_rot(&hw.base_motor, 1.65)?;
-        run_for_rot(&hw.base_motor, -0.15)?;
+        run_for_rot(&hw.base_motor, 1.675)?;
+        run_for_rot(&hw.base_motor, -0.175)?;
     }
     unlock_cube(hw)?;
     return Ok(());
@@ -196,7 +196,7 @@ fn main() -> Ev3Result<()> {
     base_motor.set_ramp_down_sp(1000)?; // This is used to make the motor progressively stop. Else it lacks precision
 
     let flipper_motor: TachoMotor = TachoMotor::get(MotorPort::OutD)?;
-    flipper_motor.set_speed_sp(base_motor.get_max_speed()?/4)?;
+    flipper_motor.set_speed_sp(base_motor.get_max_speed()?/3)?;
     flipper_motor.set_ramp_down_sp(1000)?;
     
     let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
@@ -213,9 +213,12 @@ fn main() -> Ev3Result<()> {
         color_sensor: sensor};
     let mut data = Data::init();
     reset_sensor_position(&hw)?;
-    // scan_cube(&hw,&mut data)?;
+    scan_cube(&hw,&mut data)?;
     println!("Color values: {:?}",data.facelet_rgb_values);
-    // println!("{}",solve_cube("DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD".to_string()));
-    apply_solution_part("F'".to_string(), &hw, &mut data)?;
+    let solution = solve_cube("FRRUUUUUUFFDRRDRRDLLLFFFFFFDDDDDDBLLUBBULLULLBBRBBRBBR".to_string());
+    println!("{}",solution);
+    for part in solution.split_whitespace(){
+        apply_solution_part(part.to_owned(), &hw, &mut data)?;
+    }
     Ok(())
 }
