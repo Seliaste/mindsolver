@@ -9,7 +9,12 @@ use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
 use std::process::Command;
 
-
+struct Hardware {
+    base_motor: TachoMotor,
+    flipper_motor: TachoMotor,
+    sensor_motor: TachoMotor,
+    color_sensor: ColorSensor
+}
 
 struct Data {
     // The scan order will always be the same, 
@@ -54,35 +59,35 @@ fn run_for_rot(motor: &TachoMotor, rot: f64) -> Ev3Result<()> {
     Ok(())
 }
 
-fn rot_base45(base_motor: &TachoMotor) -> Ev3Result<()> {
-    run_for_rot(base_motor, 0.375)?;
+fn rot_base45(hw: &Hardware) -> Ev3Result<()> {
+    run_for_rot(&hw.base_motor, 0.375)?;
     Ok(())
 }
 
-fn rot_base90(base_motor: &TachoMotor) -> Ev3Result<()> {
-    run_for_rot(&base_motor, 0.75)?;
+fn rot_base90(hw: &Hardware) -> Ev3Result<()> {
+    run_for_rot(&hw.base_motor, 0.75)?;
     Ok(())
 }
 
-fn flip_cube(flipper_motor: &TachoMotor) -> Ev3Result<()> {
-    run_for_deg(&flipper_motor,200)?;
-    run_for_deg(&flipper_motor,-200)?;
+fn flip_cube(hw: &Hardware) -> Ev3Result<()> {
+    run_for_deg(&hw.flipper_motor,200)?;
+    run_for_deg(&hw.flipper_motor,-200)?;
     Ok(())
 }
 
-fn sensor_scan(sensor: &ColorSensor,data :&mut Data) -> Ev3Result<()>{
-    let sens = sensor.get_rgb()?;
+fn sensor_scan(hw: &Hardware,data :&mut Data) -> Ev3Result<()>{
+    let sens = hw.color_sensor.get_rgb()?;
     println!("({},{},{})",sens.0,sens.1,sens.2);
     data.facelet_rgb_values[data.scan_order[data.curr_idx]] = sens;
     data.curr_idx+=1;
     Ok(())
 }
 
-fn reset_sensor_position(sensor_motor: &TachoMotor) -> Ev3Result<()> {
+fn reset_sensor_position(hw: &Hardware) -> Ev3Result<()> {
     println!("Resetting sensor arm");
-    sensor_motor.run_forever()?;
-    sensor_motor.wait_until(TachoMotor::STATE_STALLED, None);
-    sensor_motor.stop()?;
+    hw.sensor_motor.run_forever()?;
+    hw.sensor_motor.wait_until(TachoMotor::STATE_STALLED, None);
+    hw.sensor_motor.stop()?;
     Ok(())
 }
 
@@ -95,39 +100,39 @@ fn solve_cube(cube_notation: String) -> String {
     String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
 }
 
-fn scan_face(flipper_motor: &TachoMotor,sensor_motor: &TachoMotor,base_motor: &TachoMotor, sensor: &ColorSensor, data :&mut Data) -> Ev3Result<()> {
+fn scan_face(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     println!("Starting face scan");
-    run_for_deg(sensor_motor,-600)?;
-    sensor_scan(sensor,data)?;
-    run_for_deg(sensor_motor,90)?;
+    run_for_deg(&hw.sensor_motor,-600)?;
+    sensor_scan(hw,data)?;
+    run_for_deg(&hw.sensor_motor,90)?;
     for _ in 0..4 {
-        sensor_scan(sensor,data)?;
-        rot_base45(base_motor)?;
-        run_for_deg(sensor_motor,60)?;
-        sensor_scan(sensor,data)?;
-        rot_base45(base_motor)?;
-        run_for_deg(sensor_motor,-60)?;
+        sensor_scan(hw,data)?;
+        rot_base45(hw)?;
+        run_for_deg(&hw.sensor_motor,60)?;
+        sensor_scan(hw,data)?;
+        rot_base45(hw)?;
+        run_for_deg(&hw.sensor_motor,-60)?;
     }
-    reset_sensor_position(sensor_motor)?;
+    reset_sensor_position(hw)?;
     println!("Face scan done");
     Ok(())
 }
 
-fn scan_cube(flipper_motor: &TachoMotor,sensor_motor: &TachoMotor,base_motor: &TachoMotor, sensor: &ColorSensor, data :&mut Data) -> Ev3Result<()> {
+fn scan_cube(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     for _ in 0..4{
-        flip_cube(flipper_motor)?;
+        flip_cube(hw)?;
         // F,R,B,L scan
-        scan_face(flipper_motor, sensor_motor, base_motor, sensor,data)?;
+        scan_face(hw, data)?;
     }
-    rot_base90(base_motor)?;
-    flip_cube(flipper_motor)?;
+    rot_base90(hw)?;
+    flip_cube(hw)?;
     // U scan
-    scan_face(flipper_motor, sensor_motor, base_motor, sensor,data)?;
-    flip_cube(flipper_motor)?;
+    scan_face(hw,data)?;
+    flip_cube(hw)?;
     sleep(Duration::from_millis(100)); // waiting for the cube to fall before second rotation
-    flip_cube(flipper_motor)?;
+    flip_cube(hw)?;
     // D scan
-    scan_face(flipper_motor, sensor_motor, base_motor, sensor,data)?;
+    scan_face(hw,data)?;
     Ok(())
 }
 
@@ -144,13 +149,18 @@ fn main() -> Ev3Result<()> {
     let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
     sensor_motor.set_speed_sp(base_motor.get_max_speed()?/2)?;
     sensor_motor.set_ramp_down_sp(0)?;
-    reset_sensor_position(&sensor_motor)?;
+    
 
     let sensor = ColorSensor::find()?;
     sensor.set_mode_rgb_raw()?;
 
+    let hw = Hardware{base_motor: base_motor, 
+        flipper_motor: flipper_motor, 
+        sensor_motor:sensor_motor, 
+        color_sensor: sensor};
     let mut data = Data::init();
-    scan_cube(&flipper_motor, &sensor_motor, &base_motor, &sensor,&mut data)?;
+    reset_sensor_position(&hw)?;
+    scan_cube(&hw,&mut data)?;
     println!("{:#?}",data.facelet_rgb_values);
     // println!("{}",solve_cube("DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD".to_string()));
     Ok(())
