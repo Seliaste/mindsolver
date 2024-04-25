@@ -34,6 +34,7 @@ struct Data {
 impl Data {
     pub fn init() -> Self {
         Self {
+            // NOTE: THIS NEEDS TO BE VERIFIED, I PROBABLY MADE A MISTAKE
             scan_order : vec![4,7,8,5,2,1,0,3,6, // U
             22,25,26,23,20,19,18,21,24, // F
             31,34,35,32,29,28,27,30,33, // D
