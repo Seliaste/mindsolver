@@ -10,6 +10,19 @@ use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
 use std::process::Command;
 
+// Hardcoded values
+// The scan order will always be the same, so insted of complicated code it's better to hardcode it
+thread_local!(static SCAN_INDEX_ORDER: Vec<isize> = 
+    vec![4,7,8,5,2,1,0,3,6, // U
+    22,25,26,23,20,19,18,21,24, // F
+    31,34,35,32,29,28,27,30,33, // D
+    49,52,53,50,47,46,45,48,51,// B
+    13,16,17,14,11,10,9,12,15, // R
+    40,37,36,39,42,43,44,41,38];// L
+     
+    static CURR_INDEX: isize = 0;);
+// Thread local makes truly mutable global values without unsafe code
+
 fn run_for_deg(motor: &TachoMotor, degree: i32)  -> Ev3Result<()> {
     let count = motor.get_count_per_rot()? as f64/360.*degree as f64;
     motor.run_to_rel_pos(Some(count as i32))?;
@@ -116,7 +129,7 @@ fn main() -> Ev3Result<()> {
 
     let sensor = ColorSensor::find()?;
     sensor.set_mode_rgb_raw()?;
-    // scan_cube(&flipper_motor, &sensor_motor, &base_motor, &sensor)?;
+    scan_cube(&flipper_motor, &sensor_motor, &base_motor, &sensor)?;
     // println!("{}",solve_cube("DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD".to_string()));
     Ok(())
 }
