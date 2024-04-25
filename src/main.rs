@@ -161,7 +161,7 @@ fn main() -> Ev3Result<()> {
     let mut data = Data::init();
     reset_sensor_position(&hw)?;
     scan_cube(&hw,&mut data)?;
-    println!("{:#?}",data.facelet_rgb_values);
+    println!("{:?}",data.facelet_rgb_values);
     // println!("{}",solve_cube("DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD".to_string()));
     Ok(())
 }
