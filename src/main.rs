@@ -1,7 +1,5 @@
 extern crate ev3dev_lang_rust;
 
-use core::time;
-use std::fmt;
 use std::thread::sleep;
 use std::time::Duration;
 
