@@ -98,7 +98,7 @@ fn unlock_cube(hw: &Hardware) -> Ev3Result<()> {
 fn sensor_scan(hw: &Hardware,data :&mut Data) -> Ev3Result<()>{
     let mut sens = hw.color_sensor.get_rgb()?;
     sens.1 = sens.1/2; // it gets too green
-    sens.0 = (sens.0 as f32/1.5) as i32; // it gets too green
+    sens.0 = (sens.0 as f32/1.5) as i32; // it gets a bit too red
     let sensmax = sens.0.max(sens.1.max(sens.2)) as f32;
     let sens256: (u8,u8,u8) = (((sens.0 as f32/sensmax*255.) as i32).try_into().unwrap()
     , (((sens.1 as f32/sensmax*255.) as i32).try_into().unwrap())
@@ -127,7 +127,6 @@ fn solve_cube(cube_notation: String) -> String {
 }
 
 fn apply_solution_part(part: String, hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
-    // TODO: Make the right face face down
     println!("Applying part {}",part);
     let face = part.chars().nth(0).unwrap();
     if !data.next_faces.contains(&face) { // then we have to rotate
