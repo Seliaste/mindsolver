@@ -1,10 +1,11 @@
 extern crate ev3dev_lang_rust;
 
 use std::iter;
+use std::ops::Index;
 use std::thread::sleep;
 use std::time::Duration;
 
-use ev3dev_lang_rust::Ev3Result;
+use ev3dev_lang_rust::{motors, Ev3Result};
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
 use std::process::Command;
@@ -23,7 +24,11 @@ struct Data {
     // Current facelet number 
     curr_idx : usize,
     // Stores RGB values in the order of the standard notatio
-    facelet_rgb_values: Vec<(i32,i32,i32)>
+    facelet_rgb_values: Vec<(i32,i32,i32)>,
+    next_faces: [char;4], // Faces that can be accessed by simply flipping. First one is the one currently down
+    // right and left from the sensor POV
+    right_face: char, 
+    left_face: char,
 }
 
 impl Data {
@@ -36,7 +41,10 @@ impl Data {
             13,16,17,14,11,10,9,12,15, // R
             40,37,36,39,42,43,44,41,38],// L
             curr_idx : 0,
-            facelet_rgb_values: iter::repeat((0,0,0)).take(54).collect()
+            facelet_rgb_values: iter::repeat((0,0,0)).take(54).collect(),
+            next_faces: ['R','F','L','B'],
+            right_face: 'D',
+            left_face: 'U'
         }
     }
 }
@@ -75,6 +83,16 @@ fn flip_cube(hw: &Hardware) -> Ev3Result<()> {
     Ok(())
 }
 
+fn lock_cube(hw: &Hardware) -> Ev3Result<()> {
+    run_for_deg(&hw.flipper_motor,100)?;
+    Ok(())
+}
+
+fn unlock_cube(hw: &Hardware) -> Ev3Result<()> {
+    run_for_deg(&hw.flipper_motor,-100)?;
+    Ok(())
+}
+
 fn sensor_scan(hw: &Hardware,data :&mut Data) -> Ev3Result<()>{
     let sens = hw.color_sensor.get_rgb()?;
     println!("({},{},{})",sens.0,sens.1,sens.2);
@@ -100,6 +118,40 @@ fn solve_cube(cube_notation: String) -> String {
     String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
 }
 
+fn apply_solution_part(part: String, hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
+    // TODO: Make the right face face down
+    let face = part.chars().nth(0).unwrap();
+    if !data.next_faces.contains(&face) { // then we have to rotate
+        rot_base90(hw)?;
+        let tmp = data.left_face;
+        let tmp2 = data.right_face;
+        data.left_face = data.next_faces[3];
+        data.right_face = data.next_faces[1];
+        data.next_faces[1] = tmp;
+        data.next_faces[3] = tmp2;
+    }
+    while data.next_faces[0] != face {
+        flip_cube(hw)?;
+        data.next_faces.rotate_left(1);
+        println!("Next faces: {:?}",data.next_faces)
+    }
+    lock_cube(hw)?;
+    if part.len() == 1 { // 90deg clockwise
+        // We need to go a little further each time as the base borders are not the same width as the cube
+        run_for_rot(&hw.base_motor, 0.9)?; 
+        run_for_rot(&hw.base_motor, -0.15)?;
+    }
+    else if part.ends_with('\''){ // 90 deg counterclockwise
+        run_for_rot(&hw.base_motor, -0.9)?;
+        run_for_rot(&hw.base_motor, 0.15)?;
+    } else { // 180deg
+        run_for_rot(&hw.base_motor, 1.65)?;
+        run_for_rot(&hw.base_motor, -0.15)?;
+    }
+    unlock_cube(hw)?;
+    return Ok(());
+}
+
 fn scan_face(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     println!("Starting face scan");
     run_for_deg(&hw.sensor_motor,-600)?;
@@ -120,18 +172,18 @@ fn scan_face(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
 
 fn scan_cube(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
     for _ in 0..4{
+        // U,F,D,B scan
         flip_cube(hw)?;
-        // F,R,B,L scan
         scan_face(hw, data)?;
     }
     rot_base90(hw)?;
     flip_cube(hw)?;
-    // U scan
+    // R scan
     scan_face(hw,data)?;
     flip_cube(hw)?;
     sleep(Duration::from_millis(100)); // waiting for the cube to fall before second rotation
     flip_cube(hw)?;
-    // D scan
+    // L scan
     scan_face(hw,data)?;
     Ok(())
 }
@@ -160,8 +212,9 @@ fn main() -> Ev3Result<()> {
         color_sensor: sensor};
     let mut data = Data::init();
     reset_sensor_position(&hw)?;
-    scan_cube(&hw,&mut data)?;
-    println!("{:?}",data.facelet_rgb_values);
+    // scan_cube(&hw,&mut data)?;
+    println!("Color values: {:?}",data.facelet_rgb_values);
     // println!("{}",solve_cube("DRLUUBFBRBLURRLRUBLRDDFDLFUFUFFDBRDUBRUFLLFDDBFLUBLRBD".to_string()));
+    apply_solution_part("F'".to_string(), &hw, &mut data)?;
     Ok(())
 }
