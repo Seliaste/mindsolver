@@ -1,11 +1,12 @@
 extern crate ev3dev_lang_rust;
+extern crate colored;
 
 use std::iter;
-use std::ops::Index;
 use std::thread::sleep;
 use std::time::Duration;
+use colored::*;
 
-use ev3dev_lang_rust::{motors, Ev3Result};
+use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
 use std::process::Command;
@@ -79,8 +80,8 @@ fn rot_base90(hw: &Hardware) -> Ev3Result<()> {
 }
 
 fn flip_cube(hw: &Hardware) -> Ev3Result<()> {
-    run_for_deg(&hw.flipper_motor,210)?;
-    run_for_deg(&hw.flipper_motor,-210)?;
+    run_for_deg(&hw.flipper_motor,200)?;
+    run_for_deg(&hw.flipper_motor,-200)?;
     Ok(())
 }
 
@@ -95,15 +96,21 @@ fn unlock_cube(hw: &Hardware) -> Ev3Result<()> {
 }
 
 fn sensor_scan(hw: &Hardware,data :&mut Data) -> Ev3Result<()>{
-    let sens = hw.color_sensor.get_rgb()?;
-    println!("({},{},{})",sens.0,sens.1,sens.2);
+    let mut sens = hw.color_sensor.get_rgb()?;
+    sens.1 = sens.1/2; // it gets too green
+    sens.0 = (sens.0 as f32/1.5) as i32; // it gets too green
+    let sensmax = sens.0.max(sens.1.max(sens.2)) as f32;
+    let sens256: (u8,u8,u8) = (((sens.0 as f32/sensmax*255.) as i32).try_into().unwrap()
+    , (((sens.1 as f32/sensmax*255.) as i32).try_into().unwrap())
+    , (((sens.2 as f32/sensmax*255.) as i32).try_into().unwrap()));
+    println!("{}",format!("({},{},{})",sens256.0,sens256.1,sens256.2).truecolor(sens256.0, sens256.1, sens256.2));
     data.facelet_rgb_values[data.scan_order[data.curr_idx]] = sens;
     data.curr_idx+=1;
     Ok(())
 }
 
 fn reset_sensor_position(hw: &Hardware) -> Ev3Result<()> {
-    println!("Resetting sensor arm");
+    println!("{}","Resetting sensor arm".blue());
     hw.sensor_motor.run_forever()?;
     hw.sensor_motor.wait_until(TachoMotor::STATE_STALLED, None);
     hw.sensor_motor.stop()?;
@@ -222,7 +229,7 @@ fn main() -> Ev3Result<()> {
     scan_cube(&hw,&mut data)?;
     println!("Color values: {:?}",data.facelet_rgb_values);
     let solution = solve_cube("FRRUUUUUUFFDRRDRRDLLLFFFFFFDDDDDDBLLUBBULLULLBBRBBRBBR".to_string());
-    println!("Seultion is {}",solution);
+    println!("Solution is {}",solution);
     for part in solution.split_whitespace(){
         apply_solution_part(part.to_owned(), &hw, &mut data)?;
     }
