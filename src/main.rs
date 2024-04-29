@@ -1,6 +1,9 @@
+#![feature(portable_simd)]
 extern crate ev3dev_lang_rust;
 extern crate colored;
+extern crate nabo;
 
+use std::collections::HashMap;
 use std::iter;
 use std::thread::sleep;
 use std::time::Duration;
@@ -10,6 +13,22 @@ use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
 use std::process::Command;
+use nabo::*;
+
+// We use https://github.com/muodov/kociemba for solving
+
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
+struct Col([NotNan<f64>;3],char);
+
+impl Point<f64> for Col {
+    const DIM: u32 = 3;
+    fn set(&mut self, index: u32, value: NotNan<f64>) {
+        self.0[index as usize] = value;
+    }
+    fn get(&self, index: u32) -> NotNan<f64> {
+        self.0[index as usize]
+    }
+}
 
 struct Hardware {
     base_motor: TachoMotor,
@@ -25,7 +44,7 @@ struct Data {
     // Current facelet number 
     curr_idx : usize,
     // Stores RGB values in the order of the standard notatio
-    facelet_rgb_values: Vec<(i32,i32,i32)>,
+    facelet_rgb_values: Vec<Col>,
     next_faces: [char;4], // Faces that can be accessed by simply flipping. First one is the one currently down
     // right and left from the sensor POV
     right_face: char, 
@@ -43,7 +62,7 @@ impl Data {
             13,16,17,14,11,10,9,12,15, // R
             40,37,36,39,42,43,44,41,38],// L
             curr_idx : 0,
-            facelet_rgb_values: iter::repeat((0,0,0)).take(54).collect(),
+        facelet_rgb_values: iter::repeat(Col([NotNan::new(0.).unwrap(),NotNan::new(0.).unwrap(),NotNan::new(0.).unwrap()],' ')).take(54).collect(),
             next_faces: ['R','F','L','B'],
             right_face: 'D',
             left_face: 'U'
@@ -51,7 +70,36 @@ impl Data {
     }
 }
 
+fn hsv_from_rgb(rgb:(f64,f64,f64)) -> (f64,f64,f64){
+        let r = rgb.0 / 255.0;
+        let g = rgb.1 / 255.0;
+        let b = rgb.2 / 255.0;
 
+        let min = r.min(g.min(b));
+        let max = r.max(g.max(b));
+        let delta = max - min;
+
+        let v = max;
+        let s = match max > 1e-3 {
+            true => delta / max,
+            false => 0.0,
+        };
+        let h = match delta == 0.0 {
+            true => 0.0,
+            false => {
+                if r == max {
+                    (g - b) / delta
+                } else if g == max {
+                    2.0 + (b - r) / delta
+                } else {
+                    4.0 + (r - g) / delta
+                }
+            }
+        };
+        let h2 = ((h * 60.0) + 360.0) % 360.0;
+
+        (h2, s, v)
+}
 
 
 fn run_for_deg(motor: &TachoMotor, degree: i32)  -> Ev3Result<()> {
@@ -96,15 +144,14 @@ fn unlock_cube(hw: &Hardware) -> Ev3Result<()> {
 }
 
 fn sensor_scan(hw: &Hardware,data :&mut Data) -> Ev3Result<()>{
-    let mut sens = hw.color_sensor.get_rgb()?;
-    sens.1 = sens.1/2; // it gets too green
-    sens.0 = (sens.0 as f32/1.5) as i32; // it gets a bit too red
-    let sensmax = sens.0.max(sens.1.max(sens.2)) as f32;
-    let sens256: (u8,u8,u8) = (((sens.0 as f32/sensmax*255.) as i32).try_into().unwrap()
-    , (((sens.1 as f32/sensmax*255.) as i32).try_into().unwrap())
-    , (((sens.2 as f32/sensmax*255.) as i32).try_into().unwrap()));
-    println!("{}",format!("({},{},{})",sens256.0,sens256.1,sens256.2).truecolor(sens256.0, sens256.1, sens256.2));
-    data.facelet_rgb_values[data.scan_order[data.curr_idx]] = sens;
+    let sensi32 = hw.color_sensor.get_rgb()?;
+    let rgb = ((sensi32.0 as f64*1.7)*(255./1020.)
+    ,sensi32.1 as f64*(255./1020.)
+    ,(sensi32.2 as f64*1.875)*(255./1020.));
+    println!("{}",format!("({},{},{})",rgb.0,rgb.1,rgb.2).truecolor(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8));
+    let idx = data.scan_order[data.curr_idx];
+    let hsv = hsv_from_rgb(rgb);
+    data.facelet_rgb_values[idx] = Col([NotNan::new(hsv.0).unwrap(),NotNan::new(hsv.1).unwrap(),NotNan::new(hsv.2).unwrap()],' ');
     data.curr_idx+=1;
     Ok(())
 }
@@ -204,7 +251,7 @@ fn scan_cube(hw: &Hardware, data :&mut Data) -> Ev3Result<()> {
 fn main() -> Ev3Result<()> {
     
     let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
-    base_motor.set_speed_sp(base_motor.get_max_speed()?/2)?;
+    base_motor.set_speed_sp((base_motor.get_max_speed()?as f32/1.5) as i32)?;
     base_motor.set_ramp_down_sp(1000)?; // This is used to make the motor progressively stop. Else it lacks precision
 
     let flipper_motor: TachoMotor = TachoMotor::get(MotorPort::OutD)?;
@@ -226,8 +273,21 @@ fn main() -> Ev3Result<()> {
     let mut data = Data::init();
     reset_sensor_position(&hw)?;
     scan_cube(&hw,&mut data)?;
-    println!("Color values: {:?}",data.facelet_rgb_values);
-    let solution = solve_cube("FRRUUUUUUFFDRRDRRDLLLFFFFFFDDDDDDBLLUBBULLULLBBRBBRBBR".to_string());
+    println!("Color values: {:?} (size {})",data.facelet_rgb_values, data.facelet_rgb_values.len());
+    let tree = KDTree::new(&data.facelet_rgb_values);
+    let centre_to_face: HashMap<usize, char> = HashMap::from([(4,'U'),(22,'F'),(31,'D'),(49,'B'),(13,'R'),(40,'L')]);
+    for centre in [4, 22, 31, 49, 13, 40]{
+        let face = centre_to_face.get(&centre).unwrap();
+        data.facelet_rgb_values[centre].1 = face.clone();
+        let neighbours = tree.knn(8, &data.facelet_rgb_values[centre]);
+        for mut neighbour in neighbours{
+            neighbour.point.1 = face.clone();
+            data.facelet_rgb_values[neighbour.index as usize] = neighbour.point;
+        }
+    }
+    let cube_string = data.facelet_rgb_values.iter().map(|x|x.1).collect();
+    println!("Cube string is: {}",cube_string);
+    let solution = solve_cube(cube_string);
     println!("Solution is {}",solution);
     for part in solution.split_whitespace(){
         apply_solution_part(part.to_owned(), &hw, &mut data)?;

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 colored = "2.1.0"
 ev3dev-lang-rust = "0.14.0"
+nabo = "0.3.0"
 
 [profile.release]
 lto = true
