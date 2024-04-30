@@ -20,6 +20,7 @@ mod hardware;
 mod cube;
 mod knn;
 mod utils;
+mod classification;
 
 // We use https://github.com/muodov/kociemba for solving
 
