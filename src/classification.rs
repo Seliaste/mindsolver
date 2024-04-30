@@ -33,7 +33,7 @@ impl PartialEq for Point {
     }
 }
 impl Point {
-    fn dist(&self,other:&Self) -> f64 {
+    pub fn dist(&self,other:&Self) -> f64 {
         let res : f64 = (self.x-other.x).powi(2) + (self.y-other.y).powi(2) + (self.z-other.z).powi(2);
         res.sqrt()
     }
@@ -48,7 +48,7 @@ pub struct Classification {
 }
 
 impl Classification {
-    fn init(red_points:Vec<Point>, black_points:Vec<Point>, k:i32) -> Self {
+    pub fn init(red_points:Vec<Point>, black_points:Vec<Point>, k:i32) -> Self {
         let distances = HashMap::new();
         Classification{red_points,black_points,distances,k}
     }
@@ -63,8 +63,16 @@ impl Classification {
         }
     }
 
-    fn clear_doubles() {
+    fn clear_doubles(&mut self) -> bool {
+        todo!()
     }
 
-
+    pub fn classify(&mut self) -> HashMap<Point,Vec<(f64,Point)>>{
+        self.calc_distances();
+        let mut done = false;
+        while !done {
+            done = self.clear_doubles();
+        }
+        return self.distances.clone();
+    }
 }
