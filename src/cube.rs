@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::iter;
-use std::ops::Index;
 use std::process::Command;
-use crate::classification::{Classification, Point};
 
-use crate::{classification, Col};
+use crate::classification::{Classification, Point};
 
 pub struct Cube {
     // The scan order will always be the same,
@@ -27,7 +25,7 @@ impl Cube {
             scan_order: vec![4, 7, 8, 5, 2, 1, 0, 3, 6, // U
                              22, 25, 26, 23, 20, 19, 18, 21, 24, // F
                              31, 34, 35, 32, 29, 28, 27, 30, 33, // D
-                             49, 52, 53, 50, 47, 46, 45, 48, 51,// B
+                             49, 46, 45, 48, 51, 52, 53, 50, 47,// B
                              13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                              40, 37, 36, 39, 42, 43, 44, 41, 38],// L
             curr_idx: 0,
@@ -37,7 +35,6 @@ impl Cube {
             left_face: 'U',
         }
     }
-
     pub fn to_notation(&self) -> String {
         // we clone so that a fonction named to_smthng doesnt have side effects
         let mut facelets = self.facelet_rgb_values.clone();

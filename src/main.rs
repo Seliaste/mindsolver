@@ -24,6 +24,13 @@ mod classification;
 // We use https://github.com/muodov/kociemba for solving
 
 fn sensor_scan(hw: &Hardware, data: &mut Cube) -> Ev3Result<()> {
+    // let sens_1 = hw.color_sensor.get_rgb()?;
+    // Hardware::run_for_deg(&hw.sensor_motor, -10)?;
+    // let sens_2 = hw.color_sensor.get_rgb()?;
+    // Hardware::run_for_deg(&hw.sensor_motor, -10)?;
+    // let sens_3 = hw.color_sensor.get_rgb()?;
+    // Hardware::run_for_deg(&hw.sensor_motor, 20)?;
+    // let sens_i32 = ((sens_1.0+sens_2.0+sens_3.0)/3,(sens_1.1+sens_2.1+sens_3.1)/3,(sens_1.2+sens_2.2+sens_3.2)/3);
     let sens_i32 = hw.color_sensor.get_rgb()?;
     let rgb = ((sens_i32.0 as f64 * 1.7) * (255. / 1020.)
                , sens_i32.1 as f64 * (255. / 1020.)
@@ -31,8 +38,9 @@ fn sensor_scan(hw: &Hardware, data: &mut Cube) -> Ev3Result<()> {
     println!("{}", format!("({},{},{})", rgb.0, rgb.1, rgb.2).truecolor(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8));
     let idx = data.scan_order[data.curr_idx];
     let hsv = hsv_from_rgb(rgb);
-    data.facelet_rgb_values[idx] = Point{x:hsv.0,y:hsv.1,z:hsv.2,index:idx};
+    data.facelet_rgb_values[idx] = Point{x:rgb.0,y:rgb.1,z:rgb.2,index:idx};
     data.curr_idx += 1;
+    // sleep(Duration::from_secs(1));
     Ok(())
 }
 
@@ -78,15 +86,18 @@ fn scan_face(hw: &Hardware, cube: &mut Cube) -> Ev3Result<()> {
         if i == 1 {
             Hardware::run_for_deg(&hw.sensor_motor, -20)?;
         }
+        if i == 3 {
+            Hardware::run_for_deg(&hw.sensor_motor, 20)?;
+        }
         sensor_scan(hw, cube)?;
         hw.rot_base45()?;
         Hardware::run_for_deg(&hw.sensor_motor, 40)?;
+        if i == 3 {
+            Hardware::run_for_deg(&hw.sensor_motor, -10)?;
+        }
         sensor_scan(hw, cube)?;
         hw.rot_base45()?;
         Hardware::run_for_deg(&hw.sensor_motor, -40)?;
-        if i == 2 {
-            Hardware::run_for_deg(&hw.sensor_motor, 20)?;
-        }
     }
     hw.reset_sensor_position()?;
     println!("Face scan done");
@@ -99,6 +110,7 @@ fn scan_cube(hw: &Hardware, cube: &mut Cube) -> Ev3Result<()> {
         hw.flip_cube()?;
         scan_face(hw, cube)?;
     }
+    hw.flip_cube()?;
     hw.rot_base90()?;
     hw.flip_cube()?;
     // R scan
@@ -116,11 +128,11 @@ fn main() -> Ev3Result<()> {
     let mut cube = Cube::init();
     hw.reset_sensor_position()?;
     scan_cube(&hw, &mut cube)?;
-    println!("Color values: {:?} (size {})", cube.facelet_rgb_values, cube.facelet_rgb_values.len());
     println!("Cube string is: {}", cube.to_notation());
     let solution = cube.solve_cube();
-    if solution.eq("Unsolvable cube!"){
-        panic!("Error: {}",solution);
+    if solution.trim() == "Unsolvable cube!" {
+        println!("Error: {}",solution);
+        return Ok(())
     }
     println!("Solution is {}", solution);
     for part in solution.split_whitespace() {

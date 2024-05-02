@@ -141,9 +141,7 @@ impl Classification {
                 arr.push((dist.0,dist.1));
                 added.push(dist.1);
             }
-        }for result in res.clone(){
-        println!("{:?} (len: {}): {:?}",result.0, result.1.len(), result.1);
-            }
+        }
         res
     }
 }
