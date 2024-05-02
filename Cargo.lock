@@ -172,6 +172,7 @@ dependencies = [
  "colored",
  "ev3dev-lang-rust",
  "nabo",
+ "rand",
 ]
 
 [[package]]

@@ -9,6 +9,7 @@ edition = "2021"
 colored = "2.1.0"
 ev3dev-lang-rust = "0.14.0"
 nabo = "0.3.0"
+rand = "0.8.5"
 
 [profile.release]
 lto = true

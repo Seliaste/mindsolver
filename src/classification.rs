@@ -17,9 +17,9 @@ We are done once all the black points are assigned. We are then sure every point
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Point {
-    x:f64,y:f64,z:f64,index:i32
+    x:f64,y:f64,z:f64,index:usize
 }
 impl Hash for Point {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -37,6 +37,15 @@ impl Point {
         let res : f64 = (self.x-other.x).powi(2) + (self.y-other.y).powi(2) + (self.z-other.z).powi(2);
         res.sqrt()
     }
+
+    pub fn rand_cloud(k:usize, bound: f64) -> Vec<Point> {
+        let mut res = vec![];
+        for i in 0..k{
+            let (x,y,z) = (rand::random::<f64>()%bound,rand::random::<f64>()%bound,rand::random::<f64>()%bound);
+            res.push(Point{x,y,z,index:i});
+        }
+        res
+    }
 }
 
 
@@ -53,7 +62,7 @@ impl Classification {
         Classification{red_points,black_points,distances,k}
     }
 
-    fn calc_distances(&mut self) {
+    fn calc_distance_rp(&mut self) {
         for rp in &self.red_points{
             self.distances.insert(rp.clone(), vec![]);
             let vec: &mut Vec<(f64,Point)> = self.distances.get_mut(&rp).unwrap();
@@ -63,16 +72,102 @@ impl Classification {
         }
     }
 
-    fn clear_doubles(&mut self) -> bool {
-        todo!()
+    fn calc_distance_bp(&mut self) -> Vec<(f64,Point,Point)> {
+        let mut res: Vec<(f64,Point,Point)> = vec![];
+        for bp in &self.black_points{
+            for rp in &self.red_points{
+                res.push((bp.dist(rp),bp.clone(),rp.clone()))
+            }
+        }
+        res
     }
 
-    pub fn classify(&mut self) -> HashMap<Point,Vec<(f64,Point)>>{
-        self.calc_distances();
-        let mut done = false;
-        while !done {
-            done = self.clear_doubles();
+
+    fn clear_doubles(&mut self) -> bool {
+        let mut modif = false;
+        for point in &self.black_points{
+            let mut mindist = f64::INFINITY;
+            for arr in self.distances.values(){
+                for dist in arr {
+                    if dist.1.eq(point) && dist.0 < mindist{
+                        mindist = dist.0;
+                    }
+                }
+            }
+            for arr in self.distances.values_mut(){
+                for idx in 0..self.k as usize{
+                    let opt = arr.get(idx);
+                    if opt.is_none(){continue}
+                    let dist = opt.unwrap();
+                    if dist.1.eq(point) && dist.0 > mindist{
+                        arr.remove(idx);
+                        modif = true;
+                    }
+                }
+            }
+        }
+        return modif;
+    }
+
+    pub fn aena(&mut self) -> HashMap<Point,Vec<(f64,Point)>>{
+        self.calc_distance_rp();
+        for vec in self.distances.values_mut(){
+            vec.sort_by(|a,b| a.0.total_cmp(&b.0));
+        }
+        let mut modif = true;
+        while modif {
+            modif = self.clear_doubles();
         }
         return self.distances.clone();
+    }
+
+    pub fn frank(&mut self) -> HashMap<Point,Vec<(f64,Point)>>{
+        let mut distances = self.calc_distance_bp();
+        distances.sort_by(|a,b|a.0.total_cmp(&b.0));
+        let mut added = vec![];
+        let mut res: HashMap<Point,Vec<(f64, Point)>> = HashMap::new();
+        for rp in self.red_points.clone(){
+            res.insert(rp,Vec::new());
+        }
+        for dist in distances {
+            if added.contains(&dist.1){
+                continue
+            }
+            let arr = res.get_mut(&dist.2).unwrap();
+            if arr.len() < self.k as usize {
+                arr.push((dist.0,dist.1));
+                added.push(dist.1);
+            }
+        }
+        res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::classification::{Classification, Point};
+
+    #[test]
+    fn test_aena(){
+        let cloud = Point::rand_cloud(54,100.);
+        let (rp,bp) = cloud.split_at(6);
+        let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
+        let res = clas.aena();
+        for result in res{
+            println!("{:?}: {:?}",result.0, result.1);
+            // assert_eq!(result.1.len(),8)
+        }
+    }
+
+    #[test]
+    fn test_frank(){
+        let cloud = Point::rand_cloud(54,100.);
+        let (rp,bp) = cloud.split_at(6);
+        let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
+        let res = clas.frank();
+        for result in res{
+            println!("{:?} (len: {}): {:?}",result.0, result.1.len(), result.1);
+            // assert_eq!(result.1.len(),8)
+        }
     }
 }
