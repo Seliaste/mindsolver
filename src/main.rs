@@ -2,14 +2,13 @@
 
 extern crate colored;
 extern crate ev3dev_lang_rust;
-extern crate nabo;
 
 use std::thread::sleep;
 use std::time::Duration;
 
 use colored::*;
 use ev3dev_lang_rust::Ev3Result;
-use nabo::*;
+use crate::classification::Point;
 
 use crate::cube::Cube;
 use crate::hardware::*;
@@ -32,7 +31,7 @@ fn sensor_scan(hw: &Hardware, data: &mut Cube) -> Ev3Result<()> {
     println!("{}", format!("({},{},{})", rgb.0, rgb.1, rgb.2).truecolor(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8));
     let idx = data.scan_order[data.curr_idx];
     let hsv = hsv_from_rgb(rgb);
-    data.facelet_rgb_values[idx] = Col([NotNan::new(hsv.0).unwrap(), NotNan::new(hsv.1).unwrap(), NotNan::new(hsv.2).unwrap()], ' ');
+    data.facelet_rgb_values[idx] = Point{x:hsv.0,y:hsv.1,z:hsv.2,index:idx};
     data.curr_idx += 1;
     Ok(())
 }
@@ -120,6 +119,9 @@ fn main() -> Ev3Result<()> {
     println!("Color values: {:?} (size {})", cube.facelet_rgb_values, cube.facelet_rgb_values.len());
     println!("Cube string is: {}", cube.to_notation());
     let solution = cube.solve_cube();
+    if solution.eq("Unsolvable cube!"){
+        panic!("Error: {}",solution);
+    }
     println!("Solution is {}", solution);
     for part in solution.split_whitespace() {
         apply_solution_part(part.to_owned(), &hw, &mut cube)?;

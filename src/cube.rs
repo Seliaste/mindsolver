@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::iter;
+use std::ops::Index;
 use std::process::Command;
+use crate::classification::{Classification, Point};
 
-use nabo::{KDTree, NotNan};
-
-use crate::Col;
+use crate::{classification, Col};
 
 pub struct Cube {
     // The scan order will always be the same,
@@ -13,7 +13,7 @@ pub struct Cube {
     // Current facelet number
     pub curr_idx: usize,
     // Stores RGB values in the order of the standard notatio
-    pub facelet_rgb_values: Vec<Col>,
+    pub facelet_rgb_values: Vec<Point>,
     pub next_faces: [char; 4], // Faces that can be accessed by simply flipping. First one is the one currently down
     // right and left from the sensor POV
     pub right_face: char,
@@ -31,7 +31,7 @@ impl Cube {
                              13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                              40, 37, 36, 39, 42, 43, 44, 41, 38],// L
             curr_idx: 0,
-            facelet_rgb_values: iter::repeat(Col([NotNan::new(0.).unwrap(), NotNan::new(0.).unwrap(), NotNan::new(0.).unwrap()], ' ')).take(54).collect(),
+            facelet_rgb_values: iter::repeat(Point{x:0.,y:0.,z:0.,index:0}).take(54).collect(),
             next_faces: ['R', 'F', 'L', 'B'],
             right_face: 'D',
             left_face: 'U',
@@ -41,18 +41,31 @@ impl Cube {
     pub fn to_notation(&self) -> String {
         // we clone so that a fonction named to_smthng doesnt have side effects
         let mut facelets = self.facelet_rgb_values.clone();
-        let tree = KDTree::new(&facelets);
-        let centre_to_face: HashMap<usize, char> = HashMap::from([(4, 'U'), (22, 'F'), (31, 'D'), (49, 'B'), (13, 'R'), (40, 'L')]);
-        for centre in [4, 22, 31, 49, 13, 40] {
-            let face = centre_to_face.get(&centre).unwrap();
-            facelets[centre].1 = face.clone();
-            let neighbours = tree.knn(8, &facelets[centre]);
-            for mut neighbour in neighbours {
-                neighbour.point.1 = face.clone();
-                facelets[neighbour.index as usize] = neighbour.point;
+        let mut centres = vec![];
+        let mut sides = vec![];
+        let centre_index = [4, 22, 31, 49, 13, 40];
+        for centre in centre_index {
+            let face = facelets.get(centre).unwrap();
+            centres.push(face.clone());
+        }
+        for side in 0..54 {
+            if !centre_index.contains(&side){
+                let face = facelets.get(side).unwrap();
+                sides.push(face.clone());
             }
         }
-        facelets.iter().map(|x| x.1).collect()
+        let mut classification = Classification::init(centres, sides, 8);
+        let res = classification.frank();
+        let centre_to_face: HashMap<usize, char> = HashMap::from([(4, 'U'), (22, 'F'), (31, 'D'), (49, 'B'), (13, 'R'), (40, 'L')]);
+        let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
+        for key in res.keys(){
+            let facechar = centre_to_face.get(&key.index).unwrap().clone();
+            string[key.index] = facechar;
+            for point in res.get(key).unwrap(){
+                string[point.1.index] = facechar;
+            }
+        }
+        string.iter().collect()
     }
 
     pub fn solve_cube(&self) -> String {

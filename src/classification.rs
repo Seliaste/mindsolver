@@ -19,7 +19,10 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Point {
-    x:f64,y:f64,z:f64,index:usize
+    pub(crate) x:f64,
+    pub(crate) y:f64,
+    pub(crate) z:f64,
+    pub(crate) index:usize
 }
 impl Hash for Point {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -138,7 +141,9 @@ impl Classification {
                 arr.push((dist.0,dist.1));
                 added.push(dist.1);
             }
-        }
+        }for result in res.clone(){
+        println!("{:?} (len: {}): {:?}",result.0, result.1.len(), result.1);
+            }
         res
     }
 }
@@ -147,17 +152,17 @@ impl Classification {
 mod tests {
     use crate::classification::{Classification, Point};
 
-    #[test]
-    fn test_aena(){
-        let cloud = Point::rand_cloud(54,100.);
-        let (rp,bp) = cloud.split_at(6);
-        let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
-        let res = clas.aena();
-        for result in res{
-            println!("{:?}: {:?}",result.0, result.1);
-            // assert_eq!(result.1.len(),8)
-        }
-    }
+    // #[test]
+    // fn test_aena(){
+    //     let cloud = Point::rand_cloud(54,100.);
+    //     let (rp,bp) = cloud.split_at(6);
+    //     let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
+    //     let res = clas.aena();
+    //     for result in res{
+    //         println!("{:?}: {:?}",result.0, result.1);
+    //         // assert_eq!(result.1.len(),8)
+    //     }
+    // }
 
     #[test]
     fn test_frank(){
@@ -166,7 +171,6 @@ mod tests {
         let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
         let res = clas.frank();
         for result in res{
-            println!("{:?} (len: {}): {:?}",result.0, result.1.len(), result.1);
             // assert_eq!(result.1.len(),8)
         }
     }
