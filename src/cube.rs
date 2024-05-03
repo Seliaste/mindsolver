@@ -38,9 +38,9 @@ impl Cube {
     pub fn to_notation(&self) -> String {
         // we clone so that a function named to_something doesn't have side effects
         let facelets = self.facelet_rgb_values.clone();
-        let mut centres = vec![];
-        let mut sides = vec![];
-        let centre_index = [4, 22, 31, 49, 13, 40];
+        let mut centres = vec![]; // centroids (red points)
+        let mut sides = vec![]; // points to classify (black points)
+        let centre_index = [4, 22, 31, 49, 13, 40]; // TODO: merge with centre_to_face dict keys
         for centre in centre_index {
             let face = facelets.get(centre).unwrap();
             centres.push(face.clone());
@@ -65,18 +65,16 @@ impl Cube {
         string.iter().collect()
     }
 
+    // We use https://github.com/muodov/kociemba for solving.
     pub fn solve_cube(&self) -> String {
-        Self::solve_cube_notation(self.to_notation())
-    }
-
-    pub fn solve_cube_notation(cube_notation: String) -> String {
         let output = Command::new("sh")
             .arg("-c")
-            .arg(format!("./kociemba {}", cube_notation))
+            .arg(format!("./kociemba {}", self.to_notation()))
             .output()
             .expect("Failed to execute Kociemba executable");
         String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
     }
+
 }
 
 

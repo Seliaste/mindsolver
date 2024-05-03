@@ -24,7 +24,7 @@ impl PartialEq for Point {
 }
 
 impl Point {
-    pub fn dist(&self, other: &Self) -> f64 {
+    pub fn distance(&self, other: &Self) -> f64 {
         let res: f64 = (self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2);
         res.sqrt()
     }
@@ -52,9 +52,10 @@ We start assigning black points that have the lowest distance to a red point, an
 We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
  */
 pub struct Classification {
-    red_points: Vec<Point>,
-    black_points: Vec<Point>,
-    k: i32,
+    red_points: Vec<Point>, // centroids
+    black_points: Vec<Point>, // to classify
+    k: i32, // nb of elements per red points
+    // TODO: auto calc it from the black points / red points ratio
 }
 
 impl Classification {
@@ -66,7 +67,7 @@ impl Classification {
         let mut res: Vec<(f64, Point, Point)> = vec![];
         for bp in &self.black_points {
             for rp in &self.red_points {
-                res.push((bp.dist(rp), bp.clone(), rp.clone()))
+                res.push((bp.distance(rp), bp.clone(), rp.clone()))
             }
         }
         res

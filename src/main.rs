@@ -13,7 +13,6 @@ mod hardware;
 mod cube;
 mod classification;
 
-// We use https://github.com/muodov/kociemba for solving
 
 
 fn main() -> Ev3Result<()> {
