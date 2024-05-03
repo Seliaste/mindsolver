@@ -29,6 +29,7 @@ impl Point {
         res.sqrt()
     }
 
+    #[allow(dead_code)]
     pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
         let mut res = vec![];
         for i in 0..k {

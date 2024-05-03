@@ -6,11 +6,11 @@ use crate::classification::{Classification, Point};
 
 pub struct Cube {
     // The scan order will always be the same,
-    // so insted of complicated code it's better to hardcode it
+    // so instead of complicated code it's better to hardcode it
     pub scan_order: Vec<usize>,
     // Current facelet number
     pub curr_idx: usize,
-    // Stores RGB values in the order of the standard notatio
+    // Stores RGB values in the order of the standard notation
     pub facelet_rgb_values: Vec<Point>,
     pub next_faces: [char; 4], // Faces that can be accessed by simply flipping. First one is the one currently down
     // right and left from the sensor POV
@@ -36,7 +36,7 @@ impl Cube {
         }
     }
     pub fn to_notation(&self) -> String {
-        // we clone so that a fonction named to_smthng doesnt have side effects
+        // we clone so that a function named to_something doesn't have side effects
         let facelets = self.facelet_rgb_values.clone();
         let mut centres = vec![];
         let mut sides = vec![];
@@ -56,10 +56,10 @@ impl Cube {
         let centre_to_face: HashMap<usize, char> = HashMap::from([(4, 'U'), (22, 'F'), (31, 'D'), (49, 'B'), (13, 'R'), (40, 'L')]);
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
         for key in res.keys() {
-            let facechar = centre_to_face.get(&key.index).unwrap().clone();
-            string[key.index] = facechar;
+            let face_char = centre_to_face.get(&key.index).unwrap().clone();
+            string[key.index] = face_char;
             for point in res.get(key).unwrap() {
-                string[point.1.index] = facechar;
+                string[point.1.index] = face_char;
             }
         }
         string.iter().collect()

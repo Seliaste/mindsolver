@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 colored = "2.1.0"
 ev3dev-lang-rust = "0.14.0"
+paris = { version = "1.5", features = ["no_logger","timestamps","macros"] }
 rand = "0.8.5"
 
 [profile.release]

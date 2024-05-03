@@ -5,6 +5,7 @@ use colored::Colorize;
 use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
+use paris::{info, log, success};
 
 use crate::classification::Point;
 use crate::cube::Cube;
@@ -77,7 +78,7 @@ impl Hardware {
     }
 
     pub fn reset_sensor_position(&self) -> Ev3Result<()> {
-        println!("{}", "Resetting sensor arm".blue());
+        info!("Resetting sensor arm");
         self.sensor_motor.run_forever()?;
         self.sensor_motor.wait_until(TachoMotor::STATE_STALLED, None);
         self.sensor_motor.stop()?;
@@ -95,7 +96,7 @@ impl Hardware {
         let rgb = ((sens_i32.0 as f64 * 1.7) * (255. / 1020.)
                    , sens_i32.1 as f64 * (255. / 1020.)
                    , (sens_i32.2 as f64 * 1.875) * (255. / 1020.));
-        println!("{}", format!("({},{},{})", rgb.0, rgb.1, rgb.2).truecolor(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8));
+        log!("Scanned {}", format!("({},{},{})", rgb.0, rgb.1, rgb.2).truecolor(rgb.0 as u8, rgb.1 as u8, rgb.2 as u8));
         let idx = data.scan_order[data.curr_idx];
         data.facelet_rgb_values[idx] = Point { x: rgb.0, y: rgb.1, z: rgb.2, index: idx };
         data.curr_idx += 1;
@@ -104,7 +105,7 @@ impl Hardware {
 
 
     pub fn apply_solution_part(&self, part: String, cube: &mut Cube) -> Ev3Result<()> {
-        println!("Applying part {}", part);
+        info!("Applying part {}", part);
         let face = part.chars().nth(0).unwrap();
         if !cube.next_faces.contains(&face) { // then we have to rotate
             self.rot_base90()?;
@@ -136,7 +137,7 @@ impl Hardware {
     }
 
     pub fn scan_face(&self, cube: &mut Cube) -> Ev3Result<()> {
-        println!("Starting face scan");
+        info!("Starting face scan...");
         Hardware::run_for_deg(&self.sensor_motor, -600)?;
         self.sensor_scan(cube)?;
         Hardware::run_for_deg(&self.sensor_motor, 90)?;
@@ -158,7 +159,7 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
-        println!("Face scan done");
+        success!("Face scan done!");
         Ok(())
     }
 
