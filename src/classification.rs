@@ -1,15 +1,3 @@
-/*
-This is an experimental classification technique.
-In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
-Black points need to be linked to a single red point. We don't want red points to be linked between them.
-Here, central face colors are red points and side colors are black points. Each red point has to be linked to k black points.
-
-Here is Frank's algorithm:
-Instead of storing distances of every black points for each red point, we store distances of every red points for each black point.
-We start assigning black points that have the lowest distance to a red point, and once a red point has 8 elements we remove it from the assignable to.
-We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
- */
-
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
@@ -51,7 +39,17 @@ impl Point {
     }
 }
 
+/*
+This is an experimental classification technique.
+In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
+Black points need to be linked to a single red point. We don't want red points to be linked between them.
+Here, central face colors are red points and side colors are black points. Each red point has to be linked to k black points.
 
+Here is Frank's algorithm:
+Instead of storing distances of every black points for each red point, we store distances of every red points for each black point.
+We start assigning black points that have the lowest distance to a red point, and once a red point has 8 elements we remove it from the assignable to.
+We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
+ */
 pub struct Classification {
     red_points: Vec<Point>,
     black_points: Vec<Point>,
