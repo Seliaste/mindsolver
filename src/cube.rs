@@ -29,7 +29,7 @@ impl Cube {
                              13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                              40, 37, 36, 39, 42, 43, 44, 41, 38],// L
             curr_idx: 0,
-            facelet_rgb_values: iter::repeat(Point{x:0.,y:0.,z:0.,index:0}).take(54).collect(),
+            facelet_rgb_values: iter::repeat(Point { x: 0., y: 0., z: 0., index: 0 }).take(54).collect(),
             next_faces: ['R', 'F', 'L', 'B'],
             right_face: 'D',
             left_face: 'U',
@@ -37,7 +37,7 @@ impl Cube {
     }
     pub fn to_notation(&self) -> String {
         // we clone so that a fonction named to_smthng doesnt have side effects
-        let mut facelets = self.facelet_rgb_values.clone();
+        let facelets = self.facelet_rgb_values.clone();
         let mut centres = vec![];
         let mut sides = vec![];
         let centre_index = [4, 22, 31, 49, 13, 40];
@@ -46,19 +46,19 @@ impl Cube {
             centres.push(face.clone());
         }
         for side in 0..54 {
-            if !centre_index.contains(&side){
+            if !centre_index.contains(&side) {
                 let face = facelets.get(side).unwrap();
                 sides.push(face.clone());
             }
         }
         let mut classification = Classification::init(centres, sides, 8);
-        let res = classification.frank();
+        let res = classification.classify();
         let centre_to_face: HashMap<usize, char> = HashMap::from([(4, 'U'), (22, 'F'), (31, 'D'), (49, 'B'), (13, 'R'), (40, 'L')]);
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
-        for key in res.keys(){
+        for key in res.keys() {
             let facechar = centre_to_face.get(&key.index).unwrap().clone();
             string[key.index] = facechar;
-            for point in res.get(key).unwrap(){
+            for point in res.get(key).unwrap() {
                 string[point.1.index] = facechar;
             }
         }
