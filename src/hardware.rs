@@ -30,9 +30,11 @@ impl Hardware {
         flipper_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
         let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
+        sensor_motor.reset()?;
         sensor_motor.set_speed_sp(base_motor.get_max_speed()? / 2)?;
         sensor_motor.set_ramp_down_sp(0)?;
-        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
+        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_COAST)?;
+        sensor_motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
 
         let color_sensor = ColorSensor::find()?;
         color_sensor.set_mode_rgb_raw()?;
@@ -47,15 +49,14 @@ impl Hardware {
     pub fn run_for_deg(motor: &TachoMotor, degree: i32) -> Ev3Result<()> {
         let count = motor.get_count_per_rot()? as f64 / 360. * degree as f64;
         motor.run_to_rel_pos(Some(count as i32))?;
+        motor.wait_until(TachoMotor::STATE_RUNNING, Some(Duration::from_millis(500)));
         motor.wait_until_not_moving(None);
         sleep(Duration::from_millis(20));
         Ok(())
     }
 
     pub fn run_for_rot(motor: &TachoMotor, rot: f64) -> Ev3Result<()> {
-        let count = motor.get_count_per_rot()? as f64 * rot;
-        motor.run_to_rel_pos(Some(count as i32))?;
-        motor.wait_until_not_moving(None);
+        Self::run_for_deg(motor,(rot*360.) as i32)?;
         Ok(())
     }
 
@@ -96,11 +97,11 @@ impl Hardware {
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
         let sens_1 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -4)?;
+        Hardware::run_for_deg(&self.sensor_motor, -2)?;
         let sens_2 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -4)?;
+        Hardware::run_for_deg(&self.sensor_motor, -2)?;
         let sens_3 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 8)?;
+        Hardware::run_for_deg(&self.sensor_motor, 4)?;
         let sens_i32 = (
             (sens_1.0 + sens_2.0 + sens_3.0) / 3,
             (sens_1.1 + sens_2.1 + sens_3.1) / 3,
@@ -109,7 +110,7 @@ impl Hardware {
         let rgb = (
             (sens_i32.0 as f64 * 1.7) * (255. / 1020.),
             sens_i32.1 as f64 * (255. / 1020.),
-            (sens_i32.2 as f64 * 1.875) * (255. / 1020.),
+            (sens_i32.2 as f64 * 2.) * (255. / 1020.),
         );
         log!(
             "Scanned {}",
@@ -175,11 +176,17 @@ impl Hardware {
             if i == 3 {
                 Hardware::run_for_deg(&self.sensor_motor, 20)?;
             }
+            if i == 0 {
+                Hardware::run_for_deg(&self.sensor_motor, -10)?;
+            }
             self.sensor_scan(cube)?;
             self.rot_base45()?;
             Hardware::run_for_deg(&self.sensor_motor, 40)?;
             if i == 3 {
-                Hardware::run_for_deg(&self.sensor_motor, -10)?;
+                Hardware::run_for_deg(&self.sensor_motor, -20)?;
+            }
+            if i == 0 {
+                Hardware::run_for_deg(&self.sensor_motor, -15)?;
             }
             self.sensor_scan(cube)?;
             self.rot_base45()?;
