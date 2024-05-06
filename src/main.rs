@@ -14,19 +14,23 @@ mod cube;
 mod hardware;
 
 fn main() -> Ev3Result<()> {
-    let hw = Hardware::init()?;
+    let mut hw = Hardware::init()?;
     let mut cube = Cube::init();
-    hw.reset_sensor_position()?;
-    hw.scan_cube(&mut cube)?;
-    success!("Cube string is: {}", cube.to_notation());
-    let solution = cube.solve_cube();
-    if solution.trim() == "Unsolvable cube!" {
-        error!("Can't apply a solution: {}", solution);
-        return Ok(());
-    }
+    // hw.reset_sensor_position()?;
+    // hw.scan_cube(&mut cube)?;
+    // success!("Cube string is: {}", cube.to_notation());
+    // let solution = cube.solve_cube();
+    // if solution.trim() == "Unsolvable cube!" {
+    //     error!("Can't apply a solution: {}", solution);
+    //     return Ok(());
+    // }
+    let solution = "R F' D2 F' L' B2 U B' U' F' R' F2 D' L2 U' D2 F2 D' L2 U2";
     info!("Solution is {}", solution);
     for part in solution.split_whitespace() {
         hw.apply_solution_part(part.to_owned(), &mut cube)?;
+    }
+    if hw.locked {
+        hw.unlock_cube()?;
     }
     Ok(())
 }

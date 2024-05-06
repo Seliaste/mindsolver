@@ -15,12 +15,13 @@ pub struct Hardware {
     pub flipper_motor: TachoMotor,
     pub sensor_motor: TachoMotor,
     pub color_sensor: ColorSensor,
+    pub locked: bool,
 }
 
 impl Hardware {
     pub fn init() -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
-        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
+        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32) as i32)?;
         base_motor.set_ramp_down_sp(0)?; // This is used to make the motor progressively stop. Else it lacks precision
         base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
@@ -43,6 +44,7 @@ impl Hardware {
             flipper_motor,
             sensor_motor,
             color_sensor,
+            locked:false,
         });
     }
 
@@ -70,19 +72,24 @@ impl Hardware {
         Ok(())
     }
 
-    pub fn flip_cube(&self) -> Ev3Result<()> {
-        Self::run_for_deg(&self.flipper_motor, 200)?;
-        Self::run_for_deg(&self.flipper_motor, -200)?;
-        Ok(())
-    }
-
-    pub fn lock_cube(&self) -> Ev3Result<()> {
+    pub fn flip_cube(&mut self) -> Ev3Result<()> {
+        if !self.locked {
+            self.lock_cube()?;
+        }
         Self::run_for_deg(&self.flipper_motor, 100)?;
+        Self::run_for_deg(&self.flipper_motor, -100)?;
         Ok(())
     }
 
-    pub fn unlock_cube(&self) -> Ev3Result<()> {
+    pub fn lock_cube(&mut self) -> Ev3Result<()> {
+        Self::run_for_deg(&self.flipper_motor, 100)?;
+        self.locked = true;
+        Ok(())
+    }
+
+    pub fn unlock_cube(&mut self) -> Ev3Result<()> {
         Self::run_for_deg(&self.flipper_motor, -100)?;
+        self.locked = false;
         Ok(())
     }
 
@@ -131,11 +138,12 @@ impl Hardware {
         Ok(())
     }
 
-    pub fn apply_solution_part(&self, part: String, cube: &mut Cube) -> Ev3Result<()> {
+    pub fn apply_solution_part(&mut self, part: String, cube: &mut Cube) -> Ev3Result<()> {
         info!("Applying part {}", part);
         let face = part.chars().nth(0).unwrap();
         if !cube.next_faces.contains(&face) {
             // then we have to rotate
+            self.unlock_cube()?;
             self.rot_base90()?;
             let tmp = cube.left_face;
             let tmp2 = cube.right_face;
@@ -148,7 +156,9 @@ impl Hardware {
             self.flip_cube()?;
             cube.next_faces.rotate_left(1);
         }
-        self.lock_cube()?;
+        if !self.locked {
+            self.lock_cube()?;
+        }
         if part.len() == 1 {
             // 90deg clockwise
             // We need to go a little further each time as the base borders are not the same width as the cube
@@ -163,12 +173,14 @@ impl Hardware {
             Hardware::run_for_rot(&self.base_motor, 1.675)?;
             Hardware::run_for_rot(&self.base_motor, -0.175)?;
         }
-        self.unlock_cube()?;
         return Ok(());
     }
 
-    pub fn scan_face(&self, cube: &mut Cube) -> Ev3Result<()> {
+    pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
         info!("Starting face scan...");
+        if self.locked {
+            self.unlock_cube()?;
+        }
         Hardware::run_for_deg(&self.sensor_motor, -600)?;
         self.sensor_scan(cube)?;
         Hardware::run_for_deg(&self.sensor_motor, 90)?;
@@ -197,13 +209,14 @@ impl Hardware {
         Ok(())
     }
 
-    pub fn scan_cube(&self, cube: &mut Cube) -> Ev3Result<()> {
+    pub fn scan_cube(&mut self, cube: &mut Cube) -> Ev3Result<()> {
         for _ in 0..4 {
             // U,F,D,B scan
             self.flip_cube()?;
             self.scan_face(cube)?;
         }
         self.flip_cube()?;
+        self.unlock_cube()?;
         self.rot_base90()?;
         self.flip_cube()?;
         // R scan
