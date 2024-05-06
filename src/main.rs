@@ -4,16 +4,14 @@ extern crate colored;
 extern crate ev3dev_lang_rust;
 extern crate paris;
 
-use ev3dev_lang_rust::Ev3Result;
-use paris::{error, info, success};
 use crate::cube::Cube;
 use crate::hardware::*;
+use ev3dev_lang_rust::Ev3Result;
+use paris::{error, info, success};
 
-mod hardware;
-mod cube;
 mod classification;
-
-
+mod cube;
+mod hardware;
 
 fn main() -> Ev3Result<()> {
     let hw = Hardware::init()?;

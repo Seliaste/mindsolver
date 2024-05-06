@@ -25,7 +25,8 @@ impl PartialEq for Point {
 
 impl Point {
     pub fn distance(&self, other: &Self) -> f64 {
-        let res: f64 = (self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2);
+        let res: f64 =
+            (self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2);
         res.sqrt()
     }
 
@@ -33,7 +34,11 @@ impl Point {
     pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
         let mut res = vec![];
         for i in 0..k {
-            let (x, y, z) = (rand::random::<f64>() % bound, rand::random::<f64>() % bound, rand::random::<f64>() % bound);
+            let (x, y, z) = (
+                rand::random::<f64>() % bound,
+                rand::random::<f64>() % bound,
+                rand::random::<f64>() % bound,
+            );
             res.push(Point { x, y, z, index: i });
         }
         res
@@ -52,15 +57,19 @@ We start assigning black points that have the lowest distance to a red point, an
 We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
  */
 pub struct Classification {
-    red_points: Vec<Point>, // centroids
+    red_points: Vec<Point>,   // centroids
     black_points: Vec<Point>, // to classify
-    k: i32, // nb of elements per red points
-    // TODO: auto calc it from the black points / red points ratio
+    k: i32,                   // nb of elements per red points
+                              // TODO: auto calc it from the black points / red points ratio
 }
 
 impl Classification {
     pub fn init(red_points: Vec<Point>, black_points: Vec<Point>, k: i32) -> Self {
-        Classification { red_points, black_points, k }
+        Classification {
+            red_points,
+            black_points,
+            k,
+        }
     }
 
     fn calc_distance(&mut self) -> Vec<(f64, Point, Point)> {
