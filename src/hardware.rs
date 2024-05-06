@@ -156,8 +156,8 @@ impl Hardware {
             Hardware::run_for_rot(&self.base_motor, 0.175)?;
         } else if part.ends_with('\'') {
             // 90 deg counterclockwise
-            Hardware::run_for_rot(&self.base_motor, 0.925)?;
-            Hardware::run_for_rot(&self.base_motor, -0.175)?;
+            Hardware::run_for_rot(&self.base_motor, 0.900)?;
+            Hardware::run_for_rot(&self.base_motor, -0.150)?;
         } else {
             // 180deg
             Hardware::run_for_rot(&self.base_motor, 1.675)?;
