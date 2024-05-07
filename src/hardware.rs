@@ -21,7 +21,7 @@ pub struct Hardware {
 impl Hardware {
     pub fn init() -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
-        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32) as i32)?;
+        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32/1.5) as i32)?;
         base_motor.set_ramp_down_sp(0)?; // This is used to make the motor progressively stop. Else it lacks precision
         base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
@@ -33,8 +33,8 @@ impl Hardware {
         let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
         sensor_motor.reset()?;
         sensor_motor.set_speed_sp(base_motor.get_max_speed()? / 2)?;
-        sensor_motor.set_ramp_down_sp(0)?;
-        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_COAST)?;
+        sensor_motor.set_ramp_down_sp(250)?;
+        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
         sensor_motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
 
         let color_sensor = ColorSensor::find()?;
@@ -51,9 +51,8 @@ impl Hardware {
     pub fn run_for_deg(motor: &TachoMotor, degree: i32) -> Ev3Result<()> {
         let count = motor.get_count_per_rot()? as f64 / 360. * degree as f64;
         motor.run_to_rel_pos(Some(count as i32))?;
-        motor.wait_until(TachoMotor::STATE_RUNNING, Some(Duration::from_millis(500)));
+        motor.wait_until(TachoMotor::STATE_RUNNING, Some(Duration::from_millis(1000)));
         motor.wait_until_not_moving(None);
-        sleep(Duration::from_millis(20));
         Ok(())
     }
 
@@ -76,8 +75,8 @@ impl Hardware {
         if !self.locked {
             self.lock_cube()?;
         }
-        Self::run_for_deg(&self.flipper_motor, 100)?;
-        Self::run_for_deg(&self.flipper_motor, -100)?;
+        Self::run_for_deg(&self.flipper_motor, 80)?;
+        Self::run_for_deg(&self.flipper_motor, -80)?;
         Ok(())
     }
 
@@ -104,11 +103,11 @@ impl Hardware {
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
         let sens_1 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -2)?;
+        Hardware::run_for_deg(&self.sensor_motor, 5)?;
         let sens_2 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -2)?;
+        Hardware::run_for_deg(&self.sensor_motor, -10)?;
         let sens_3 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 4)?;
+        Hardware::run_for_deg(&self.sensor_motor, 5)?;
         let sens_i32 = (
             (sens_1.0 + sens_2.0 + sens_3.0) / 3,
             (sens_1.1 + sens_2.1 + sens_3.1) / 3,
@@ -143,7 +142,9 @@ impl Hardware {
         let face = part.chars().nth(0).unwrap();
         if !cube.next_faces.contains(&face) {
             // then we have to rotate
-            self.unlock_cube()?;
+            if self.locked {
+                self.unlock_cube()?;
+            }
             self.rot_base90()?;
             let tmp = cube.left_face;
             let tmp2 = cube.right_face;
@@ -181,28 +182,17 @@ impl Hardware {
         if self.locked {
             self.unlock_cube()?;
         }
-        Hardware::run_for_deg(&self.sensor_motor, -600)?;
+        Hardware::run_for_deg(&self.sensor_motor, -680)?;
         self.sensor_scan(cube)?;
-        Hardware::run_for_deg(&self.sensor_motor, 90)?;
+        let offsets = [100,-20,0,20];
         for i in 0..4 {
-            if i == 3 {
-                Hardware::run_for_deg(&self.sensor_motor, 20)?;
-            }
-            if i == 0 {
-                Hardware::run_for_deg(&self.sensor_motor, -10)?;
-            }
+            Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, 40)?;
-            if i == 3 {
-                Hardware::run_for_deg(&self.sensor_motor, -20)?;
-            }
-            if i == 0 {
-                Hardware::run_for_deg(&self.sensor_motor, -15)?;
-            }
+            Hardware::run_for_deg(&self.sensor_motor, 60)?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, -40)?;
+            Hardware::run_for_deg(&self.sensor_motor, -60)?;
         }
         self.reset_sensor_position()?;
         success!("Face scan done!");
