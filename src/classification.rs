@@ -60,15 +60,14 @@ pub struct Classification {
     red_points: Vec<Point>,   // centroids
     black_points: Vec<Point>, // to classify
     k: i32,                   // nb of elements per red points
-                              // TODO: auto calc it from the black points / red points ratio
 }
 
 impl Classification {
-    pub fn init(red_points: Vec<Point>, black_points: Vec<Point>, k: i32) -> Self {
+    pub fn init(red_points: Vec<Point>, black_points: Vec<Point>) -> Self {
         Classification {
+            k: (black_points.len() / red_points.len()) as i32,
             red_points,
             black_points,
-            k,
         }
     }
 
@@ -112,7 +111,7 @@ mod tests {
     fn test_classify() {
         let cloud = Point::rand_cloud(54, 100.);
         let (rp, bp) = cloud.split_at(6);
-        let mut clas = Classification::init(Vec::from(rp), Vec::from(bp), 8);
+        let mut clas = Classification::init(Vec::from(rp), Vec::from(bp));
         let res = clas.classify();
         for result in res {
             assert_eq!(result.1.len(), 8)

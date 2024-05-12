@@ -29,7 +29,7 @@ impl Cube {
                 49, 46, 45, 48, 51, 52, 53, 50, 47, // B
                 13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                 40, 37, 36, 39, 42, 43, 44, 41, 38, // L
-            ], 
+            ],
             curr_idx: 0,
             facelet_rgb_values: iter::repeat(Point {
                 x: 0.,
@@ -68,7 +68,7 @@ impl Cube {
                 sides.push(face.clone());
             }
         }
-        let mut classification = Classification::init(centres, sides, 8);
+        let mut classification = Classification::init(centres, sides);
         let res = classification.classify();
 
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
