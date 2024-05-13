@@ -39,7 +39,7 @@ impl Cube {
             })
                 .take(54)
                 .collect(),
-            next_faces: ['R', 'U', 'L', 'D'],
+            next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',
         }
