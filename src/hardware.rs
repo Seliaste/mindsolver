@@ -38,7 +38,7 @@ impl Hardware {
         let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
         sensor_motor.reset()?;
         sensor_motor.set_speed_sp(base_motor.get_max_speed()? / 2)?;
-        sensor_motor.set_ramp_down_sp(250)?;
+        sensor_motor.set_ramp_down_sp(0)?;
         sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
         sensor_motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
 
@@ -56,7 +56,6 @@ impl Hardware {
     pub fn run_for_deg(motor: &TachoMotor, degree: i32) -> Ev3Result<()> {
         let count = motor.get_count_per_rot()? as f64 / 360. * degree as f64;
         motor.run_to_rel_pos(Some(count as i32))?;
-        motor.wait_until(TachoMotor::STATE_RUNNING, Some(Duration::from_millis(1000)));
         motor.wait_until_not_moving(None);
         Ok(())
     }
@@ -80,8 +79,10 @@ impl Hardware {
         if !self.locked {
             self.lock_cube()?;
         }
-        Self::run_for_deg(&self.flipper_motor, 80)?;
-        Self::run_for_deg(&self.flipper_motor, -80)?;
+        Self::run_for_deg(&self.flipper_motor, 100)?;
+        sleep(Duration::from_millis(100));
+        Self::run_for_deg(&self.flipper_motor, -100)?;
+        sleep(Duration::from_millis(100));
         Ok(())
     }
 
@@ -107,12 +108,10 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
+        sleep(Duration::from_millis(20));
         let sens_1 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 5)?;
         let sens_2 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -10)?;
         let sens_3 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 5)?;
         let sens_i32 = (
             (sens_1.0 + sens_2.0 + sens_3.0) / 3,
             (sens_1.1 + sens_2.1 + sens_3.1) / 3,
@@ -191,15 +190,15 @@ impl Hardware {
         }
         Hardware::run_for_deg(&self.sensor_motor, -680)?;
         self.sensor_scan(cube)?;
-        let offsets = [100, -20, 0, 20];
+        let offsets = [100, -30, 10, 10];
         for i in 0..4 {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, 60)?;
+            Hardware::run_for_deg(&self.sensor_motor, 50)?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, -60)?;
+            Hardware::run_for_deg(&self.sensor_motor, -50)?;
         }
         self.reset_sensor_position()?;
         success!("Face scan done!");
