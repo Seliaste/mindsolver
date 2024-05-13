@@ -4,13 +4,14 @@ use std::process::Command;
 
 use crate::classification::{Classification, Point};
 
+/// Represents the cube faces and state
 pub struct Cube {
     // The scan order will always be the same,
     // so instead of complicated code it's better to hardcode it
     pub scan_order: Vec<usize>,
     // Current facelet number
     pub curr_idx: usize,
-    // Stores RGB values in the order of the standard notation
+    /// Stores RGB values in the order of the standard notation
     pub facelet_rgb_values: Vec<Point>,
     pub next_faces: [char; 4], // Faces that can be accessed by simply flipping. First one is the one currently down
     // right and left from the sensor POV
@@ -21,7 +22,6 @@ pub struct Cube {
 impl Cube {
     pub fn init() -> Self {
         Self {
-            // NOTE: THIS NEEDS TO BE VERIFIED, I PROBABLY MADE A MISTAKE
             scan_order: vec![
                 4, 7, 8, 5, 2, 1, 0, 3, 6, // U
                 22, 25, 26, 23, 20, 19, 18, 21, 24, // F
@@ -37,13 +37,15 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-            .take(54)
-            .collect(),
+                .take(54)
+                .collect(),
             next_faces: ['R', 'F', 'L', 'B'],
             right_face: 'D',
             left_face: 'U',
         }
     }
+
+    /// Converts the cube into the standard notation. A solved cube would be UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
     pub fn to_notation(&self) -> String {
         // we clone so that a function named to_something doesn't have side effects
         let facelets = self.facelet_rgb_values.clone();
@@ -57,7 +59,7 @@ impl Cube {
             (13, 'R'),
             (40, 'L'),
         ]);
-        let centre_index = centre_to_face.keys(); // TODO: merge with centre_to_face dict keys
+        let centre_index = centre_to_face.keys();
         for centre in centre_index.clone() {
             let face = facelets.get(*centre).unwrap();
             centres.push(face.clone());
@@ -82,7 +84,7 @@ impl Cube {
         string.iter().collect()
     }
 
-    // We use https://github.com/muodov/kociemba for solving.
+    /// We use https://github.com/muodov/kociemba for solving.
     pub fn solve_cube(&self) -> String {
         let output = Command::new("sh")
             .arg("-c")

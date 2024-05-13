@@ -30,7 +30,7 @@ impl Point {
         res.sqrt()
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code)] // used for testing
     pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
         let mut res = vec![];
         for i in 0..k {
@@ -45,21 +45,20 @@ impl Point {
     }
 }
 
-/*
-This is an experimental classification technique.
-In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
-Black points need to be linked to a single red point. We don't want red points to be linked between them.
-Here, central face colors are red points and side colors are black points. Each red point has to be linked to k black points.
 
-Here is Frank's algorithm:
-Instead of storing distances of every black points for each red point, we store distances of every red points for each black point.
-We start assigning black points that have the lowest distance to a red point, and once a red point has 8 elements we remove it from the assignable to.
-We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
- */
+/// This represents a DIY classification technique.
+/// In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
+/// Black points need to be linked to a single red point. We don't want red points to be linked between them.
+/// Here, central face colors are red points and side colors are black points. Each red point has to be linked to k black points.
+///
+/// Here is Frank's algorithm:
+/// Instead of storing distances of every black points for each red point, we store distances of every red points for each black point.
+/// We start assigning black points that have the lowest distance to a red point, and once a red point has 8 elements we remove it from the assignable to.
+/// We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
 pub struct Classification {
-    red_points: Vec<Point>,   // centroids
-    black_points: Vec<Point>, // to classify
-    k: i32,                   // nb of elements per red points
+    red_points: Vec<Point>,   /// Centroids
+    black_points: Vec<Point>, /// To get classified
+    k: i32,                   /// Number of elements per red points
 }
 
 impl Classification {
@@ -81,6 +80,7 @@ impl Classification {
         res
     }
 
+    /// Will return a hashmap with red points as keys and vectors of assigned black points.
     pub fn classify(&mut self) -> HashMap<Point, Vec<(f64, Point)>> {
         let mut distances = self.calc_distance();
         distances.sort_by(|a, b| a.0.total_cmp(&b.0));

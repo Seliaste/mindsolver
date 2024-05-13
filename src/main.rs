@@ -4,10 +4,11 @@ extern crate colored;
 extern crate ev3dev_lang_rust;
 extern crate paris;
 
-use crate::cube::Cube;
-use crate::hardware::*;
 use ev3dev_lang_rust::Ev3Result;
 use paris::{error, info, success};
+
+use crate::cube::Cube;
+use crate::hardware::*;
 
 mod classification;
 mod cube;

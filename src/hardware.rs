@@ -2,26 +2,31 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
+use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
-use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
 use crate::classification::Point;
 use crate::cube::Cube;
 
+/// A representation of the robot hardware, as in motors and sensor.
 pub struct Hardware {
+    /// Motor of the platform
     pub base_motor: TachoMotor,
+    /// Motor for the flipper arm
     pub flipper_motor: TachoMotor,
+    /// Motor for the sensor arm
     pub sensor_motor: TachoMotor,
     pub color_sensor: ColorSensor,
+    /// Represents whether the flipper arm is locking the cube
     pub locked: bool,
 }
 
 impl Hardware {
     pub fn init() -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
-        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32/1.5) as i32)?;
+        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
         base_motor.set_ramp_down_sp(0)?; // This is used to make the motor progressively stop. Else it lacks precision
         base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
@@ -44,7 +49,7 @@ impl Hardware {
             flipper_motor,
             sensor_motor,
             color_sensor,
-            locked:false,
+            locked: false,
         });
     }
 
@@ -57,7 +62,7 @@ impl Hardware {
     }
 
     pub fn run_for_rot(motor: &TachoMotor, rot: f64) -> Ev3Result<()> {
-        Self::run_for_deg(motor,(rot*360.) as i32)?;
+        Self::run_for_deg(motor, (rot * 360.) as i32)?;
         Ok(())
     }
 
@@ -137,6 +142,7 @@ impl Hardware {
         Ok(())
     }
 
+    /// Will apply a transformation. Examples of transformation notations are `R, U, R', U2`
     pub fn apply_solution_part(&mut self, part: String, cube: &mut Cube) -> Ev3Result<()> {
         info!("Applying part {}", part);
         let face = part.chars().nth(0).unwrap();
@@ -177,6 +183,7 @@ impl Hardware {
         return Ok(());
     }
 
+    /// Scans the face facing up and adds the colours to the cube struct
     pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
         info!("Starting face scan...");
         if self.locked {
@@ -184,7 +191,7 @@ impl Hardware {
         }
         Hardware::run_for_deg(&self.sensor_motor, -680)?;
         self.sensor_scan(cube)?;
-        let offsets = [100,-20,0,20];
+        let offsets = [100, -20, 0, 20];
         for i in 0..4 {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
