@@ -79,9 +79,9 @@ impl Hardware {
         if !self.locked {
             self.lock_cube()?;
         }
-        Self::run_for_deg(&self.flipper_motor, 100)?;
+        Self::run_for_deg(&self.flipper_motor, 90)?;
         sleep(Duration::from_millis(100));
-        Self::run_for_deg(&self.flipper_motor, -100)?;
+        Self::run_for_deg(&self.flipper_motor, -90)?;
         sleep(Duration::from_millis(100));
         Ok(())
     }
@@ -110,8 +110,11 @@ impl Hardware {
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
         sleep(Duration::from_millis(20));
         let sens_1 = self.color_sensor.get_rgb()?;
+        Hardware::run_for_deg(&self.sensor_motor, 10)?;
         let sens_2 = self.color_sensor.get_rgb()?;
+        Hardware::run_for_deg(&self.sensor_motor, 10)?;
         let sens_3 = self.color_sensor.get_rgb()?;
+        Hardware::run_for_deg(&self.sensor_motor, -20)?;
         let sens_i32 = (
             (sens_1.0 + sens_2.0 + sens_3.0) / 3,
             (sens_1.1 + sens_2.1 + sens_3.1) / 3,
