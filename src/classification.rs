@@ -56,9 +56,12 @@ impl Point {
 /// We start assigning black points that have the lowest distance to a red point, and once a red point has 8 elements we remove it from the assignable to.
 /// We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
 pub struct Classification {
-    red_points: Vec<Point>,   /// Centroids
-    black_points: Vec<Point>, /// To get classified
-    k: i32,                   /// Number of elements per red points
+    /// Centroids
+    red_points: Vec<Point>,
+    /// To get classified
+    black_points: Vec<Point>,
+    /// Number of elements per red points
+    k: i32,
 }
 
 impl Classification {
