@@ -27,7 +27,7 @@ impl Hardware {
     pub fn init() -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
         base_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
-        base_motor.set_ramp_down_sp(0)?; // This is used to make the motor progressively stop. Else it lacks precision
+        base_motor.set_ramp_down_sp(0)?;
         base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
         let flipper_motor: TachoMotor = TachoMotor::get(MotorPort::OutD)?;
