@@ -99,7 +99,6 @@ impl Hardware {
     }
 
     pub fn reset_sensor_position(&self) -> Ev3Result<()> {
-        info!("Resetting sensor arm");
         self.sensor_motor.run_forever()?;
         self.sensor_motor
             .wait_until(TachoMotor::STATE_STALLED, None);
@@ -187,7 +186,7 @@ impl Hardware {
 
     /// Scans the face facing up and adds the colours to the cube struct
     pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
-        info!("Starting face scan...");
+
         if self.locked {
             self.unlock_cube()?;
         }
@@ -204,27 +203,33 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, -50)?;
         }
         self.reset_sensor_position()?;
-        success!("Face scan done!");
+
         Ok(())
     }
 
     pub fn scan_cube(&mut self, cube: &mut Cube) -> Ev3Result<()> {
-        for _ in 0..4 {
+        for c in ['U','F','D','B'] {
             // U,F,D,B scan
             self.flip_cube()?;
+            info!("Starting {} face scan...", c);
             self.scan_face(cube)?;
+            success!("{} face scan done! Moving to the next...", c);
         }
         self.flip_cube()?;
         self.unlock_cube()?;
         self.rot_base90()?;
         self.flip_cube()?;
         // R scan
+        info!("Starting R face scan...");
         self.scan_face(cube)?;
+        success!("R face scan done! Moving to the next...");
         self.flip_cube()?;
         sleep(Duration::from_millis(100)); // waiting for the cube to fall before second rotation
         self.flip_cube()?;
         // L scan
+        info!("Starting L face scan...");
         self.scan_face(cube)?;
+        success!("L face scan done! Cube scan over.");
         Ok(())
     }
 }

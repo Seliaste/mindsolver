@@ -17,7 +17,9 @@ mod hardware;
 fn main() -> Ev3Result<()> {
     let mut hw = Hardware::init()?;
     let mut cube = Cube::init();
+    info!("Resetting sensor arm...");
     hw.reset_sensor_position()?;
+    success!("Sensor reset. Starting cube scan.");
     hw.scan_cube(&mut cube)?;
     success!("Cube string is: {}", cube.to_notation());
     let solution = cube.solve_cube();
@@ -32,5 +34,6 @@ fn main() -> Ev3Result<()> {
     if hw.locked {
         hw.unlock_cube()?;
     }
+    success!("Cube solved! I hope you enjoyed :D");
     Ok(())
 }
