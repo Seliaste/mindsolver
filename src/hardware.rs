@@ -107,9 +107,12 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
-        const SLEEP_DURATION: Duration = Duration::from_millis(20); /// Duration of sleep between each scan
-        const MOVEMENT: i32 = 8; /// Amount of movement between scans
-        const ITER: usize = 5; /// Number of scans for a single facelet
+        /// Duration of sleep between each scan
+        const SLEEP_DURATION: Duration = Duration::from_millis(20);
+        /// Amount of movement between scans
+        const MOVEMENT: i32 = 8;
+        /// Number of scans for a single facelet
+        const ITER: usize = 5;
         let mut scans = [[0.; 3]; ITER];
         for i in 0..ITER {
             let scan = self.color_sensor.get_rgb()?;
@@ -125,13 +128,17 @@ impl Hardware {
             })
             .map(|x| x / ITER as f64);
         let rgb = [
-            (scan_avg[0]  * 1.7) * (255. / 1020.), // hardcoded correction values
+            (scan_avg[0] * 1.7) * (255. / 1020.), // hardcoded correction values
             scan_avg[1] * (255. / 1020.),
             (scan_avg[2] * 2.) * (255. / 1020.),
         ];
         log!(
             "Scanned {}",
-            format!("{:?}", rgb.map(|x| {x as u8})).truecolor(rgb[0] as u8, rgb[1] as u8, rgb[2] as u8)
+            format!("{:?}", rgb.map(|x| { x as u8 })).truecolor(
+                rgb[0] as u8,
+                rgb[1] as u8,
+                rgb[2] as u8
+            )
         );
         let idx = data.scan_order[data.curr_idx];
         data.facelet_rgb_values[idx] = Point {

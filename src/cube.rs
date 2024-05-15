@@ -37,8 +37,8 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-                .take(54)
-                .collect(),
+            .take(54)
+            .collect(),
             next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',

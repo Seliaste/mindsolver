@@ -45,7 +45,6 @@ impl Point {
     }
 }
 
-
 /// This represents a DIY classification technique.
 /// In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
 /// Black points need to be linked to a single red point. We don't want red points to be linked between them.
