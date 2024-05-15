@@ -2,9 +2,9 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
-use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
+use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
 use crate::classification::Point;
@@ -26,7 +26,7 @@ pub struct Hardware {
 impl Hardware {
     pub fn init() -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
-        base_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
+        base_motor.set_speed_sp(base_motor.get_max_speed()?)?;
         base_motor.set_ramp_down_sp(0)?;
         base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
 
@@ -37,7 +37,7 @@ impl Hardware {
 
         let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
         sensor_motor.reset()?;
-        sensor_motor.set_speed_sp(base_motor.get_max_speed()? / 2)?;
+        sensor_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
         sensor_motor.set_ramp_down_sp(0)?;
         sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
         sensor_motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
@@ -107,36 +107,37 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
-        sleep(Duration::from_millis(20));
-        let sens_1 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 10)?;
-        let sens_2 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, 10)?;
-        let sens_3 = self.color_sensor.get_rgb()?;
-        Hardware::run_for_deg(&self.sensor_motor, -20)?;
-        let sens_i32 = (
-            (sens_1.0 + sens_2.0 + sens_3.0) / 3,
-            (sens_1.1 + sens_2.1 + sens_3.1) / 3,
-            (sens_1.2 + sens_2.2 + sens_3.2) / 3,
-        );
-        let rgb = (
-            (sens_i32.0 as f64 * 1.7) * (255. / 1020.),
-            sens_i32.1 as f64 * (255. / 1020.),
-            (sens_i32.2 as f64 * 2.) * (255. / 1020.),
-        );
+        const SLEEP_DURATION: Duration = Duration::from_millis(20); /// Duration of sleep between each scan
+        const MOVEMENT: i32 = 8; /// Amount of movement between scans
+        const ITER: usize = 5; /// Number of scans for a single facelet
+        let mut scans = [[0.; 3]; ITER];
+        for i in 0..ITER {
+            let scan = self.color_sensor.get_rgb()?;
+            scans[i] = [scan.0 as f64, scan.1 as f64, scan.2 as f64];
+            Hardware::run_for_deg(&self.sensor_motor, MOVEMENT)?;
+            sleep(SLEEP_DURATION);
+        }
+        Hardware::run_for_deg(&self.sensor_motor, (-MOVEMENT) * ITER as i32)?;
+        let scan_avg = scans
+            .iter()
+            .fold([0.; 3], |acc, x| {
+                [acc[0] + x[0], acc[1] + x[1], acc[2] + x[2]]
+            })
+            .map(|x| x / ITER as f64);
+        let rgb = [
+            (scan_avg[0]  * 1.7) * (255. / 1020.), // hardcoded correction values
+            scan_avg[1] * (255. / 1020.),
+            (scan_avg[2] * 2.) * (255. / 1020.),
+        ];
         log!(
             "Scanned {}",
-            format!("({},{},{})", rgb.0, rgb.1, rgb.2).truecolor(
-                rgb.0 as u8,
-                rgb.1 as u8,
-                rgb.2 as u8
-            )
+            format!("{:?}", rgb.map(|x| {x as u8})).truecolor(rgb[0] as u8, rgb[1] as u8, rgb[2] as u8)
         );
         let idx = data.scan_order[data.curr_idx];
         data.facelet_rgb_values[idx] = Point {
-            x: rgb.0,
-            y: rgb.1,
-            z: rgb.2,
+            x: rgb[0],
+            y: rgb[1],
+            z: rgb[2],
             index: idx,
         };
         data.curr_idx += 1;
@@ -174,8 +175,8 @@ impl Hardware {
             Hardware::run_for_rot(&self.base_motor, 0.175)?;
         } else if part.ends_with('\'') {
             // 90 deg counterclockwise
-            Hardware::run_for_rot(&self.base_motor, 0.900)?;
-            Hardware::run_for_rot(&self.base_motor, -0.150)?;
+            Hardware::run_for_rot(&self.base_motor, 0.875)?;
+            Hardware::run_for_rot(&self.base_motor, -0.125)?;
         } else {
             // 180deg
             Hardware::run_for_rot(&self.base_motor, 1.675)?;
@@ -186,7 +187,6 @@ impl Hardware {
 
     /// Scans the face facing up and adds the colours to the cube struct
     pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
-
         if self.locked {
             self.unlock_cube()?;
         }
@@ -197,10 +197,10 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, 50)?;
+            Hardware::run_for_deg(&self.sensor_motor, 40)?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, -50)?;
+            Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
 
@@ -208,12 +208,12 @@ impl Hardware {
     }
 
     pub fn scan_cube(&mut self, cube: &mut Cube) -> Ev3Result<()> {
-        for c in ['U','F','D','B'] {
+        for c in ['U', 'F', 'D', 'B'] {
             // U,F,D,B scan
             self.flip_cube()?;
             info!("Starting {} face scan...", c);
             self.scan_face(cube)?;
-            success!("{} face scan done! Moving to the next...", c);
+            success!("{} face scan done!", c);
         }
         self.flip_cube()?;
         self.unlock_cube()?;
