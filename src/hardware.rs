@@ -199,12 +199,12 @@ impl Hardware {
         }
         Hardware::run_for_deg(&self.sensor_motor, -680)?;
         self.sensor_scan(cube)?;
-        let offsets = [100, -30, 10, 10];
+        let offsets = [100, -20, 10, 10];
         for i in 0..4 {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            Hardware::run_for_deg(&self.sensor_motor, 40)?;
+            if i == 0 { Hardware::run_for_deg(&self.sensor_motor, 20)?; } else { Hardware::run_for_deg(&self.sensor_motor, 40)?; }
             self.sensor_scan(cube)?;
             self.rot_base45()?;
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
