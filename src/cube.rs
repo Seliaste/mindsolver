@@ -9,6 +9,7 @@ pub struct Cube {
     // The scan order will always be the same,
     // so instead of complicated code it's better to hardcode it
     pub scan_order: Vec<usize>,
+    pub side_indexes: Vec<usize>,
     // Current facelet number
     pub curr_idx: usize,
     /// Stores RGB values in the order of the standard notation
@@ -30,6 +31,7 @@ impl Cube {
                 13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                 40, 37, 36, 39, 42, 43, 44, 41, 38, // L
             ],
+            side_indexes: vec![7,5,1,3,25,23,19,21,34,32,28,30,46,48,52,50,16,14,10,12,37,39,43,41],
             curr_idx: 0,
             facelet_rgb_values: iter::repeat(Point {
                 x: 0.,
@@ -51,6 +53,7 @@ impl Cube {
         let facelets = self.facelet_rgb_values.clone();
         let mut centres = vec![]; // centroids (red points)
         let mut sides = vec![]; // points to classify (black points)
+        let mut corners = vec![];
         let centre_to_face: HashMap<usize, char> = HashMap::from([
             (4, 'U'),
             (22, 'F'),
@@ -67,17 +70,29 @@ impl Cube {
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
                 let face = facelets.get(side).unwrap();
-                sides.push(face.clone());
+                if self.side_indexes.contains(&face.index){
+                    sides.push(face.clone());
+                } else {
+                    corners.push(face.clone());
+                }
             }
         }
-        let mut classification = Classification::init(centres, sides);
-        let res = classification.classify();
-
+        let mut classification_side = Classification::init(centres.clone(), sides);
+        let res_sides = classification_side.classify();
+        let mut classification_corners = Classification::init(centres, corners);
+        let res_corners = classification_corners.classify();
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
-        for key in res.keys() {
+        for key in res_sides.keys() {
             let face_char = centre_to_face.get(&key.index).unwrap().clone();
             string[key.index] = face_char;
-            for point in res.get(key).unwrap() {
+            for point in res_sides.get(key).unwrap() {
+                string[point.1.index] = face_char;
+            }
+        }
+        for key in res_corners.keys() {
+            let face_char = centre_to_face.get(&key.index).unwrap().clone();
+            string[key.index] = face_char;
+            for point in res_corners.get(key).unwrap() {
                 string[point.1.index] = face_char;
             }
         }
@@ -85,10 +100,10 @@ impl Cube {
     }
 
     /// We use https://github.com/muodov/kociemba for solving.
-    pub fn solve_cube(&self) -> String {
+    pub fn solve_cube(&self, cube_string: String) -> String {
         let output = Command::new("sh")
             .arg("-c")
-            .arg(format!("./kociemba {}", self.to_notation()))
+            .arg(format!("./kociemba {}", cube_string))
             .output()
             .expect("Failed to execute Kociemba executable");
         String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")

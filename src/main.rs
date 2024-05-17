@@ -21,8 +21,9 @@ fn main() -> Ev3Result<()> {
     hw.reset_sensor_position()?;
     success!("Sensor reset. Starting cube scan.");
     hw.scan_cube(&mut cube)?;
-    success!("Cube string is: {}", cube.to_notation());
-    let solution = cube.solve_cube();
+    let cube_notation = cube.to_notation();
+    success!("Cube string is: {}", cube_notation);
+    let solution = cube.solve_cube(cube.to_notation());
     if solution.trim() == "Unsolvable cube!" {
         error!("Can't apply a solution: {}", solution);
         return Ok(());
