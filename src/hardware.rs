@@ -26,7 +26,7 @@ pub struct Hardware {
     /// Amount of movement between scans
     pub movement: i32,
     /// Number of scans for a single facelet
-    pub iterations: usize
+    pub iterations: usize,
 }
 
 impl Hardware {
@@ -58,7 +58,7 @@ impl Hardware {
             locked: false,
             sleep_duration,
             movement,
-            iterations
+            iterations,
         });
     }
 
@@ -116,14 +116,17 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
-        let mut scans = vec![[0.; 3];self.iterations];
+        let mut scans = vec![[0.; 3]; self.iterations];
         for i in 0..self.iterations {
             let scan = self.color_sensor.get_rgb()?;
             scans[i] = [scan.0 as f64, scan.1 as f64, scan.2 as f64];
             Hardware::run_for_deg(&self.sensor_motor, self.movement)?;
             sleep(self.sleep_duration);
         }
-        Hardware::run_for_deg(&self.sensor_motor, (-self.movement) * self.iterations as i32)?;
+        Hardware::run_for_deg(
+            &self.sensor_motor,
+            (-self.movement) * self.iterations as i32,
+        )?;
         let scan_avg = scans
             .iter()
             .fold([0.; 3], |acc, x| {
@@ -207,7 +210,11 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
             self.rot_base45()?;
-            if i == 0 { Hardware::run_for_deg(&self.sensor_motor, 20)?; } else { Hardware::run_for_deg(&self.sensor_motor, 40)?; }
+            if i == 0 {
+                Hardware::run_for_deg(&self.sensor_motor, 20)?;
+            } else {
+                Hardware::run_for_deg(&self.sensor_motor, 40)?;
+            }
             self.sensor_scan(cube)?;
             self.rot_base45()?;
             Hardware::run_for_deg(&self.sensor_motor, -40)?;

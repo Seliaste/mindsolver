@@ -1,9 +1,9 @@
+use paris::info;
 use std::collections::HashMap;
-use std::{fs, iter};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::process::Command;
-use paris::info;
+use std::{fs, iter};
 
 use crate::classification::{Classification, Point};
 
@@ -34,7 +34,10 @@ impl Cube {
                 13, 16, 17, 14, 11, 10, 9, 12, 15, // R
                 40, 37, 36, 39, 42, 43, 44, 41, 38, // L
             ],
-            side_indexes: vec![7,5,1,3,25,23,19,21,34,32,28,30,46,48,52,50,16,14,10,12,37,39,43,41],
+            side_indexes: vec![
+                7, 5, 1, 3, 25, 23, 19, 21, 34, 32, 28, 30, 46, 48, 52, 50, 16, 14, 10, 12, 37, 39,
+                43, 41,
+            ],
             curr_idx: 0,
             facelet_rgb_values: iter::repeat(Point {
                 x: 0.,
@@ -73,7 +76,7 @@ impl Cube {
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
                 let face = facelets.get(side).unwrap();
-                if self.side_indexes.contains(&face.index){
+                if self.side_indexes.contains(&face.index) {
                     sides.push(face.clone());
                 } else {
                     corners.push(face.clone());
@@ -115,10 +118,14 @@ impl Cube {
     /// Saves the scan to file. Used for debugging
     pub fn export(&self) {
         fs::create_dir_all("scans").ok();
-        let mut file = File::create(format!("scans/{}", chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S"))).unwrap();
+        let mut file = File::create(format!(
+            "scans/{}",
+            chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S")
+        ))
+        .unwrap();
         let mut string = String::new();
         for point in self.facelet_rgb_values.iter().map(Point::export) {
-            string.push_str(format!("{}, {}, {}\n",point[0],point[1],point[2]).as_str())
+            string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
         }
         file.write_all(&format!("{}", string).into_bytes()).unwrap();
         info!("Saved scan to file");
@@ -129,9 +136,15 @@ impl Cube {
         let mut file = File::open(file_path)?;
         let mut output = String::new();
         file.read_to_string(&mut output)?;
-        for (pos,line) in output.split('\n').enumerate() {
-            if line.trim() == "" {continue}
-            let rgb: Vec<f64> = line.split(", ").map(str::parse::<f64>).map(Result::unwrap).collect();
+        for (pos, line) in output.split('\n').enumerate() {
+            if line.trim() == "" {
+                continue;
+            }
+            let rgb: Vec<f64> = line
+                .split(", ")
+                .map(str::parse::<f64>)
+                .map(Result::unwrap)
+                .collect();
             self.facelet_rgb_values[pos] = Point {
                 x: rgb[0],
                 y: rgb[1],

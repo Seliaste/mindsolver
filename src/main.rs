@@ -4,9 +4,9 @@ extern crate colored;
 extern crate ev3dev_lang_rust;
 extern crate paris;
 
-use std::time::Duration;
 use ev3dev_lang_rust::Ev3Result;
 use paris::{error, info, success};
+use std::time::Duration;
 
 use crate::cube::Cube;
 use crate::hardware::*;
@@ -43,8 +43,15 @@ struct Args {
 
 fn main() -> Ev3Result<()> {
     let args = Args::parse();
-    if args.nosolve && args.file.is_some() {no_hardware(args); return Ok(())} // we can skip hardware initialisation
-    let mut hw = Hardware::init(Duration::from_millis(args.sleep as u64),args.movement,args.iteration)?;
+    if args.nosolve && args.file.is_some() {
+        no_hardware(args);
+        return Ok(());
+    } // we can skip hardware initialisation
+    let mut hw = Hardware::init(
+        Duration::from_millis(args.sleep as u64),
+        args.movement,
+        args.iteration,
+    )?;
     let mut cube = Cube::init();
     info!("Resetting sensor arm...");
     hw.reset_sensor_position()?;
@@ -53,7 +60,8 @@ fn main() -> Ev3Result<()> {
         hw.scan_cube(&mut cube)?;
         cube.export();
     } else {
-        cube.import(args.file.unwrap()).expect("Could not load scan file");
+        cube.import(args.file.unwrap())
+            .expect("Could not load scan file");
     }
     let cube_notation = cube.to_notation();
     success!("Cube string is: {}", cube_notation);
@@ -77,7 +85,8 @@ fn main() -> Ev3Result<()> {
 
 fn no_hardware(args: Args) {
     let mut cube = Cube::init();
-    cube.import(args.file.unwrap()).expect("Could not load scan file");
+    cube.import(args.file.unwrap())
+        .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
     success!("Cube string is: {}", cube_notation);
     let solution = cube.solve_cube(cube.to_notation());
