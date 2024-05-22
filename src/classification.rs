@@ -26,7 +26,9 @@ impl PartialEq for Point {
 impl Point {
     pub fn distance(&self, other: &Self) -> f64 {
         let res: f64 =
-            (self.x - other.x).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2);
+            ((self.x - other.x)/3.).powi(2) + (self.y - other.y).powi(2) + (self.z - other.z).powi(2);
+        // TODO: The /3. is a complete hack. Should be standardized.
+        // The reason for this is that the red amount is the one we can trust the less.
         res.sqrt()
     }
 
