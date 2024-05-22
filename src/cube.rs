@@ -115,8 +115,11 @@ impl Cube {
     pub fn export(&self) {
         fs::create_dir_all("scans").ok();
         let mut file = File::create(format!("scans/{}", chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S"))).unwrap();
-        let output: Vec<[f64;3]> = self.facelet_rgb_values.iter().map(Point::export).collect();
-        println!("{:?}",output);
-        file.write_all(&format!("{:?}", output).into_bytes()).unwrap()
+        let mut string = String::new();
+        for point in self.facelet_rgb_values.iter().map(Point::export) {
+            string.push_str(format!("{}, {}, {}\n",point[0],point[1],point[2]).as_str())
+        }
+        println!("{string}");
+        file.write_all(&format!("{}", string).into_bytes()).unwrap()
     }
 }
