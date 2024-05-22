@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::{fs, iter};
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::Command;
+use paris::info;
 
 use crate::classification::{Classification, Point};
 
@@ -111,7 +112,7 @@ impl Cube {
         String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
     }
 
-    /// Saves the scan to file. Useful for debugging
+    /// Saves the scan to file. Used for debugging
     pub fn export(&self) {
         fs::create_dir_all("scans").ok();
         let mut file = File::create(format!("scans/{}", chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S"))).unwrap();
@@ -119,7 +120,26 @@ impl Cube {
         for point in self.facelet_rgb_values.iter().map(Point::export) {
             string.push_str(format!("{}, {}, {}\n",point[0],point[1],point[2]).as_str())
         }
-        println!("{string}");
-        file.write_all(&format!("{}", string).into_bytes()).unwrap()
+        file.write_all(&format!("{}", string).into_bytes()).unwrap();
+        info!("Saved scan to file");
+    }
+
+    /// Imports a scan from file. Used for debugging
+    pub fn import(&mut self, file_path: String) -> std::io::Result<()> {
+        let mut file = File::open(file_path)?;
+        let mut output = String::new();
+        file.read_to_string(&mut output)?;
+        for (pos,line) in output.split('\n').enumerate() {
+            if line.trim() == "" {continue}
+            let rgb: Vec<f64> = line.split(", ").map(str::parse::<f64>).map(Result::unwrap).collect();
+            self.facelet_rgb_values[pos] = Point {
+                x: rgb[0],
+                y: rgb[1],
+                z: rgb[2],
+                index: pos,
+            };
+        }
+        info!("Loaded scan from file");
+        Ok(())
     }
 }

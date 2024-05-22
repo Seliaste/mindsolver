@@ -19,9 +19,10 @@ fn main() -> Ev3Result<()> {
     let mut cube = Cube::init();
     info!("Resetting sensor arm...");
     hw.reset_sensor_position()?;
-    success!("Sensor reset. Starting cube scan.");
-    hw.scan_cube(&mut cube)?;
-    cube.export();
+    // success!("Sensor reset. Starting cube scan.");
+    // hw.scan_cube(&mut cube)?;
+    // cube.export();
+    cube.import("scans/2024-05-22_08-10-33".to_string()).expect("Could not load scan file");
     let cube_notation = cube.to_notation();
     success!("Cube string is: {}", cube_notation);
     let solution = cube.solve_cube(cube.to_notation());
