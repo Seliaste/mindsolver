@@ -30,6 +30,11 @@ impl Point {
         res.sqrt()
     }
 
+    /// Used in the scan saving feature
+    pub fn export(&self) -> [f64;3] {
+        [self.x,self.y,self.z]
+    }
+
     #[allow(dead_code)] // used for testing
     pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
         let mut res = vec![];

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
-use std::iter;
+use std::{fs, iter};
+use std::fs::File;
+use std::io::Write;
 use std::process::Command;
 
 use crate::classification::{Classification, Point};
@@ -107,5 +109,14 @@ impl Cube {
             .output()
             .expect("Failed to execute Kociemba executable");
         String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
+    }
+
+    /// Saves the scan to file. Useful for debugging
+    pub fn export(&self) {
+        fs::create_dir_all("scans").ok();
+        let mut file = File::create(format!("scans/{}", chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S"))).unwrap();
+        let output: Vec<[f64;3]> = self.facelet_rgb_values.iter().map(Point::export).collect();
+        println!("{:?}",output);
+        file.write_all(&format!("{:?}", output).into_bytes()).unwrap()
     }
 }
