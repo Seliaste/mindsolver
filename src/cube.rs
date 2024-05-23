@@ -2,7 +2,6 @@ use paris::info;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::process::Command;
 use std::{fs, iter};
 
 use crate::classification::{Classification, Point};

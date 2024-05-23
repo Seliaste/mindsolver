@@ -74,7 +74,6 @@ fn main() -> Ev3Result<()> {
         Ok(x) => {if x.is_solvable() { x } else { error!("Cube not solvable: {:?}.", x); return Ok(()) }}
         Err(e) => {error!("Invalid cube: {:?}.", e); return Ok(())}
     };
-    face_cube.
     let solution = solver.solve(state).expect("Could not solve cube");
     info!("Solution is {}", solution);
     if !args.nosolve {
