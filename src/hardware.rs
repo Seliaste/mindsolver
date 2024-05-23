@@ -84,6 +84,11 @@ impl Hardware {
         Ok(())
     }
 
+    pub fn rot_base90cc(&self) -> Ev3Result<()> {
+        Self::run_for_rot(&self.base_motor, -0.75)?;
+        Ok(())
+    }
+
     pub fn flip_cube(&mut self) -> Ev3Result<()> {
         if !self.locked {
             self.lock_cube()?;
@@ -166,13 +171,24 @@ impl Hardware {
             if self.locked {
                 self.unlock_cube()?;
             }
-            self.rot_base90()?;
-            let tmp = cube.left_face;
-            let tmp2 = cube.right_face;
-            cube.left_face = cube.next_faces[3];
-            cube.right_face = cube.next_faces[1];
-            cube.next_faces[1] = tmp;
-            cube.next_faces[3] = tmp2;
+            if face == cube.left_face {
+                self.rot_base90()?;
+                let tmp = cube.left_face;
+                let tmp2 = cube.right_face;
+                cube.left_face = cube.next_faces[3];
+                cube.right_face = cube.next_faces[1];
+                cube.next_faces[1] = tmp;
+                cube.next_faces[3] = tmp2;
+            }
+            else {
+                self.rot_base90cc()?;
+                let tmp = cube.right_face;
+                let tmp2 = cube.left_face;
+                cube.right_face = cube.next_faces[3];
+                cube.left_face = cube.next_faces[1];
+                cube.next_faces[1] = tmp;
+                cube.next_faces[3] = tmp2;
+            }
         }
         while cube.next_faces[0] != face {
             self.flip_cube()?;

@@ -2,7 +2,6 @@ use paris::info;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::process::Command;
 use std::{fs, iter};
 
 use crate::classification::{Classification, Point};
@@ -103,16 +102,6 @@ impl Cube {
             }
         }
         string.iter().collect()
-    }
-
-    /// We use https://github.com/muodov/kociemba for solving.
-    pub fn solve_cube(&self, cube_string: String) -> String {
-        let output = Command::new("sh")
-            .arg("-c")
-            .arg(format!("./kociemba {}", cube_string))
-            .output()
-            .expect("Failed to execute Kociemba executable");
-        String::from_utf8(output.stdout).expect("Could not convert Kociemba output to string")
     }
 
     /// Saves the scan to file. Used for debugging
