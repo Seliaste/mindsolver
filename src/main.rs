@@ -4,6 +4,7 @@ extern crate colored;
 extern crate ev3dev_lang_rust;
 extern crate paris;
 
+use std::path::Path;
 use ev3dev_lang_rust::Ev3Result;
 use paris::{error, info, success};
 use std::time::Duration;
@@ -17,7 +18,7 @@ mod hardware;
 
 use clap::Parser;
 use kewb::{CubieCube, FaceCube, Solver};
-use kewb::fs::read_table;
+use kewb::fs::{read_table, write_table};
 
 #[derive(Parser, Debug)]
 #[clap(version, about, long_about = None)]
@@ -44,6 +45,10 @@ struct Args {
 }
 
 fn main() -> Ev3Result<()> {
+    if !Path::new("./cache_file").exists() {
+        info!("Creating cache...");
+        write_table("./cache_file").expect("Could not create cache file");
+    }
     let args = Args::parse();
     if args.nosolve && args.file.is_some() {
         no_hardware(args);
