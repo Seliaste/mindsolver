@@ -1,14 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::{fs, iter};
 
 use kewb::fs::read_table;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
-use paris::info;
+use paris::{error, info};
 
 use crate::classification::{Classification, Point};
-use crate::constants::{CORNER_FACELET, EDGE_FACELET, SIDE_INDEXES};
+use crate::constants::{CORNER_FACELET, EDGE_FACELET, get_corner_colors, get_edge_colors, SIDE_INDEXES};
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -144,15 +144,37 @@ impl Cube {
 
     pub fn print_facelets(&self) {
         let notation: Vec<char> = self.to_notation().chars().collect();
-        let mut corners = String::new();
-        let mut edges = String::new();
+        let mut corners = Vec::new();
+        let mut edges = Vec::new();
         for corner in CORNER_FACELET {
-            corners += format!("[{},{},{}],",notation[corner[0]],notation[corner[1]],notation[corner[2]]).as_str();
+            let hashset = HashSet::from([
+                notation[corner[0]],
+                notation[corner[1]],
+                notation[corner[2]],
+            ]);
+            if corners.contains(&hashset) {
+                error!("Duplicate found: {:?}", hashset)
+            }
+            corners.push(hashset);
         }
         for edge in EDGE_FACELET {
-            edges += format!("[{},{}],",notation[edge[0]],notation[edge[1]]).as_str();
+            let hashset = HashSet::from([notation[edge[0]], notation[edge[1]]]);
+            if edges.contains(&hashset) {
+                error!("Duplicate found: {:?}", hashset)
+            }
+            edges.push(hashset);
         }
-        info!("Edges are: {edges}");
-        info!("Corners are: {corners}");
+        info!("Edges are: {:?}", edges);
+        info!("Corners are: {:?}", corners);
+        let edge_colors = get_edge_colors();
+        let missing_edges: Vec<&HashSet<char>> = edge_colors.iter().filter(|x| {!edges.contains(*x)}).collect();
+        let invalid_edges: Vec<&HashSet<char>> = edges.iter().filter(|x| {!edge_colors.contains(*x)}).collect();
+        info!("Missing edges are: {:?}", missing_edges);
+        info!("Invalid edges are: {:?}", invalid_edges);
+        let corner_colors = get_corner_colors();
+        let missing_corners: Vec<&HashSet<char>> = corner_colors.iter().filter(|x| {!corners.contains(*x)}).collect();
+        let invalid_corners: Vec<&HashSet<char>> = corners.iter().filter(|x| {!corner_colors.contains(*x)}).collect();
+        info!("Missing corners are: {:?}", missing_corners);
+        info!("Invalid corners are: {:?}", invalid_corners);
     }
 }

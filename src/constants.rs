@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[rustfmt::skip]
 pub const SCAN_ORDER: [usize; 54] = [
     4,   7,  8,  5,  2,  1,  0,  3,  6, // U
@@ -12,6 +14,7 @@ pub const SIDE_INDEXES: [usize; 24] = [
     7, 5, 1, 3, 25, 23, 19, 21, 34, 32, 28, 30, 46, 48, 52, 50, 16, 14, 10, 12, 37, 39, 43, 41,
 ];
 
+#[rustfmt::skip]
 pub enum Facelet {
     U1, U2, U3, U4, _U5, U6, U7, U8, U9,
     R1, R2, R3, R4, _R5, R6, R7, R8, R9,
@@ -21,6 +24,7 @@ pub enum Facelet {
     B1, B2, B3, B4, _B5, B6, B7, B8, B9,
 }
 
+#[rustfmt::skip]
 pub const CORNER_FACELET: [[usize; 3]; 8] = [
     /*UBL=*/ [Facelet::U1 as usize, Facelet::L1 as usize, Facelet::B3 as usize],
     /*UBR=*/ [Facelet::U3 as usize, Facelet::B1 as usize, Facelet::R3 as usize],
@@ -46,3 +50,33 @@ pub const EDGE_FACELET: [[usize; 2]; 12] = [
     /*DB=*/ [Facelet::D8 as usize, Facelet::B8 as usize],
     /*DL=*/ [Facelet::D4 as usize, Facelet::L8 as usize],
 ];
+
+pub fn get_corner_colors() -> [HashSet<char>; 8] {
+    [
+        /*UBL=*/ HashSet::from(['U', 'L', 'B']),
+        /*UBR=*/ HashSet::from(['U', 'B', 'R']),
+        /*UFR=*/ HashSet::from(['U', 'R', 'F']),
+        /*UFL=*/ HashSet::from(['U', 'F', 'L']),
+        /*DFL=*/ HashSet::from(['D', 'L', 'F']),
+        /*DFR=*/ HashSet::from(['D', 'F', 'R']),
+        /*DBR=*/ HashSet::from(['D', 'R', 'B']),
+        /*DBL=*/ HashSet::from(['D', 'B', 'L']),
+    ]
+}
+
+pub fn get_edge_colors() -> [HashSet<char>; 12] {
+    [
+        /*BL=*/ HashSet::from(['B', 'L']),
+        /*BR=*/ HashSet::from(['B', 'R']),
+        /*FR=*/ HashSet::from(['F', 'R']),
+        /*FL=*/ HashSet::from(['F', 'L']),
+        /*UB=*/ HashSet::from(['U', 'B']),
+        /*UR=*/ HashSet::from(['U', 'R']),
+        /*UF=*/ HashSet::from(['U', 'F']),
+        /*UL=*/ HashSet::from(['U', 'L']),
+        /*DF=*/ HashSet::from(['D', 'F']),
+        /*DR=*/ HashSet::from(['D', 'R']),
+        /*DB=*/ HashSet::from(['D', 'B']),
+        /*DL=*/ HashSet::from(['D', 'L']),
+    ]
+}
