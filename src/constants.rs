@@ -32,7 +32,6 @@ pub const CORNER_FACELET: [[usize; 3]; 8] = [
     /*DBL=*/ [Facelet::D7 as usize, Facelet::B9 as usize, Facelet::L7 as usize],
 ];
 
-/// Map the edge positions to facelet positions.
 pub const EDGE_FACELET: [[usize; 2]; 12] = [
     /*BL=*/ [Facelet::B6 as usize, Facelet::L4 as usize],
     /*BR=*/ [Facelet::B4 as usize, Facelet::R6 as usize],

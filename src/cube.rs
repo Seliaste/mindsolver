@@ -94,11 +94,11 @@ impl Cube {
 
     pub fn solve(&self) -> Solution {
         let table = read_table("./cache_file").unwrap();
-        let mut solver = Solver::new(&table, 23, Some(5.));
+        let mut solver = Solver::new(&table, 30, Some(5.));
         let face_cube = FaceCube::try_from(self.to_notation().as_str())
             .expect("Could not convert string to faces");
         let state = CubieCube::try_from(&face_cube).expect("Invalid cube");
-        return solver.solve(state).expect("Could not solve cube");
+        solver.solve(state).expect("Could not solve cube")
     }
 
     /// Saves the scan to file. Used for debugging
