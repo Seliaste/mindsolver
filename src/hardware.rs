@@ -2,12 +2,13 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
-use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
+use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
 use crate::classification::Point;
+use crate::constants::SCAN_ORDER;
 use crate::cube::Cube;
 
 /// A representation of the robot hardware, as in motors and sensor.
@@ -151,7 +152,7 @@ impl Hardware {
                 rgb[2] as u8
             )
         );
-        let idx = data.scan_order[data.curr_idx];
+        let idx = SCAN_ORDER[data.curr_idx];
         data.facelet_rgb_values[idx] = Point {
             x: rgb[0],
             y: rgb[1],

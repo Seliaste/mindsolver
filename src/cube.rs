@@ -1,45 +1,30 @@
-use std::{fs, iter};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::{fs, iter};
 
-use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
+use kewb::{CubieCube, FaceCube, Solution, Solver};
 use paris::info;
 
 use crate::classification::{Classification, Point};
+use crate::constants::{CORNER_FACELET, EDGE_FACELET, SIDE_INDEXES};
 
 /// Represents the cube faces and state
 pub struct Cube {
-    // The scan order will always be the same,
-    // so instead of complicated code it's better to hardcode it
-    pub scan_order: Vec<usize>,
-    pub side_indexes: Vec<usize>,
     // Current facelet number
     pub curr_idx: usize,
     /// Stores RGB values in the order of the standard notation
     pub facelet_rgb_values: Vec<Point>,
-    pub next_faces: [char; 4], // Faces that can be accessed by simply flipping. First one is the one currently down
+    /// Faces that can be accessed by simply flipping. First one is the one currently down
+    pub next_faces: [char; 4],
     // right and left from the sensor POV
     pub right_face: char,
     pub left_face: char,
 }
-
 impl Cube {
     pub fn init() -> Self {
         Self {
-            scan_order: vec![
-                4, 7, 8, 5, 2, 1, 0, 3, 6, // U
-                22, 25, 26, 23, 20, 19, 18, 21, 24, // F
-                31, 34, 35, 32, 29, 28, 27, 30, 33, // D
-                49, 46, 45, 48, 51, 52, 53, 50, 47, // B
-                13, 16, 17, 14, 11, 10, 9, 12, 15, // R
-                40, 37, 36, 39, 42, 43, 44, 41, 38, // L
-            ],
-            side_indexes: vec![
-                7, 5, 1, 3, 25, 23, 19, 21, 34, 32, 28, 30, 46, 48, 52, 50, 16, 14, 10, 12, 37, 39,
-                43, 41,
-            ],
             curr_idx: 0,
             facelet_rgb_values: iter::repeat(Point {
                 x: 0.,
@@ -47,8 +32,8 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-                .take(54)
-                .collect(),
+            .take(54)
+            .collect(),
             next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',
@@ -78,7 +63,7 @@ impl Cube {
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
                 let face = facelets.get(side).unwrap();
-                if self.side_indexes.contains(&face.index) {
+                if SIDE_INDEXES.contains(&face.index) {
                     sides.push(face.clone());
                 } else {
                     corners.push(face.clone());
@@ -123,7 +108,7 @@ impl Cube {
             "scans/{}",
             chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S")
         ))
-            .unwrap();
+        .unwrap();
         let mut string = String::new();
         for point in self.facelet_rgb_values.iter().map(Point::export) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
@@ -155,5 +140,19 @@ impl Cube {
         }
         info!("Loaded scan from file");
         Ok(())
+    }
+
+    pub fn print_facelets(&self) {
+        let notation: Vec<char> = self.to_notation().chars().collect();
+        let mut corners = String::new();
+        let mut edges = String::new();
+        for corner in CORNER_FACELET {
+            corners += format!("[{},{},{}],",notation[corner[0]],notation[corner[1]],notation[corner[2]]).as_str();
+        }
+        for edge in EDGE_FACELET {
+            edges += format!("[{},{}],",notation[edge[0]],notation[edge[1]]).as_str();
+        }
+        info!("Edges are: {edges}");
+        info!("Corners are: {corners}");
     }
 }

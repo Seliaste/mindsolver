@@ -17,6 +17,7 @@ use crate::cube::Cube;
 use crate::hardware::*;
 
 mod classification;
+mod constants;
 mod cube;
 mod hardware;
 
@@ -99,6 +100,7 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
+    cube.print_facelets();
     success!("Cube string is: {}", cube_notation);
     let solution = cube.solve();
     info!("Solution is {}", solution);
