@@ -2,9 +2,9 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
+use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
-use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
 use crate::classification::Point;
@@ -179,8 +179,7 @@ impl Hardware {
                 cube.right_face = cube.next_faces[1];
                 cube.next_faces[1] = tmp;
                 cube.next_faces[3] = tmp2;
-            }
-            else {
+            } else {
                 self.rot_base90cc()?;
                 let tmp = cube.right_face;
                 let tmp2 = cube.left_face;

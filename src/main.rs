@@ -5,9 +5,13 @@ extern crate ev3dev_lang_rust;
 extern crate paris;
 
 use std::path::Path;
-use ev3dev_lang_rust::Ev3Result;
-use paris::{error, info, success};
 use std::time::Duration;
+
+use clap::Parser;
+use ev3dev_lang_rust::Ev3Result;
+use kewb::error::Error;
+use kewb::fs::write_table;
+use paris::{error, info, success};
 
 use crate::cube::Cube;
 use crate::hardware::*;
@@ -15,10 +19,6 @@ use crate::hardware::*;
 mod classification;
 mod cube;
 mod hardware;
-
-use clap::Parser;
-use kewb::{CubieCube, FaceCube, Solver};
-use kewb::fs::{read_table, write_table};
 
 #[derive(Parser, Debug)]
 #[clap(version, about, long_about = None)]
@@ -44,16 +44,24 @@ struct Args {
     nosolve: bool,
 }
 
-fn main() -> Ev3Result<()> {
+fn create_cache() -> Result<(), Error> {
     if !Path::new("./cache_file").exists() {
         info!("Creating cache...");
-        write_table("./cache_file").expect("Could not create cache file");
+        write_table("./cache_file")?;
     }
+    Ok(())
+}
+
+fn main() -> Ev3Result<()> {
+    if let Err(e) = create_cache() {
+        error!("Could not create cache: {e}\nWill try to continue...")
+    };
     let args = Args::parse();
     if args.nosolve && args.file.is_some() {
+        // we can skip hardware initialisation
         no_hardware(args);
         return Ok(());
-    } // we can skip hardware initialisation
+    }
     let mut hw = Hardware::init(
         Duration::from_millis(args.sleep as u64),
         args.movement,
@@ -72,14 +80,7 @@ fn main() -> Ev3Result<()> {
     }
     let cube_notation = cube.to_notation();
     success!("Cube string is: {}", cube_notation);
-    let table = read_table("./cache_file").unwrap();
-    let mut solver = Solver::new(&table, 23, Some(5.));
-    let face_cube = FaceCube::try_from(cube_notation.as_str()).expect("Could not convert string to faces");
-    let state = match CubieCube::try_from(&face_cube){
-        Ok(x) => {if x.is_solvable() { x } else { error!("Cube not solvable: {:?}.", x); return Ok(()) }}
-        Err(e) => {error!("Invalid cube: {:?}.", e); return Ok(())}
-    };
-    let solution = solver.solve(state).expect("Could not solve cube");
+    let solution = cube.solve();
     info!("Solution is {}", solution);
     if !args.nosolve {
         for part in solution.get_all_moves() {
@@ -99,13 +100,6 @@ fn no_hardware(args: Args) {
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
     success!("Cube string is: {}", cube_notation);
-    let table = read_table("./cache_file").unwrap();
-    let mut solver = Solver::new(&table, 23, Some(5.));
-    let face_cube = FaceCube::try_from(cube_notation.as_str()).expect("Could not convert string to faces");
-    let state = match CubieCube::try_from(&face_cube){
-        Ok(x) => {if x.is_solvable() { x } else { error!("Cube not solvable: {:?}.", x); return () }}
-        Err(e) => {error!("Invalid cube: {:?}.", e); return ()}
-    };
-    let solution = solver.solve(state).expect("Could not solve cube");
+    let solution = cube.solve();
     info!("Solution is {}", solution);
 }

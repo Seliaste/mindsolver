@@ -1,8 +1,11 @@
-use paris::info;
+use std::{fs, iter};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::{fs, iter};
+
+use kewb::{CubieCube, FaceCube, Solution, Solver};
+use kewb::fs::read_table;
+use paris::info;
 
 use crate::classification::{Classification, Point};
 
@@ -44,8 +47,8 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-            .take(54)
-            .collect(),
+                .take(54)
+                .collect(),
             next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',
@@ -104,6 +107,15 @@ impl Cube {
         string.iter().collect()
     }
 
+    pub fn solve(&self) -> Solution {
+        let table = read_table("./cache_file").unwrap();
+        let mut solver = Solver::new(&table, 23, Some(5.));
+        let face_cube = FaceCube::try_from(self.to_notation().as_str())
+            .expect("Could not convert string to faces");
+        let state = CubieCube::try_from(&face_cube).expect("Invalid cube");
+        return solver.solve(state).expect("Could not solve cube");
+    }
+
     /// Saves the scan to file. Used for debugging
     pub fn export(&self) {
         fs::create_dir_all("scans").ok();
@@ -111,7 +123,7 @@ impl Cube {
             "scans/{}",
             chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S")
         ))
-        .unwrap();
+            .unwrap();
         let mut string = String::new();
         for point in self.facelet_rgb_values.iter().map(Point::export) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
