@@ -58,7 +58,7 @@ impl Cube {
         let centre_index = centre_to_face.keys();
         for centre in centre_index.clone() {
             let face = facelets.get(*centre).unwrap();
-            centres.push(face.clone());
+            centres.push((face.clone(),centre_to_face[centre]));
         }
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
