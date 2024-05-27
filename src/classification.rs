@@ -1,4 +1,3 @@
-use crate::constants::{CORNER_FACELET, EDGE_FACELET};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
@@ -65,7 +64,7 @@ impl Point {
 /// We are done once all the black points are assigned. We are then sure every point got assigned to a red point that has 8 elements or fewer.
 pub struct Classification {
     /// Centroids
-    red_points: Vec<(Point, char)>,
+    red_points: Vec<Point>,
     /// To get classified
     black_points: Vec<Point>,
     /// Number of elements per red points
@@ -73,7 +72,7 @@ pub struct Classification {
 }
 
 impl Classification {
-    pub fn init(red_points: Vec<(Point, char)>, black_points: Vec<Point>) -> Self {
+    pub fn init(red_points: Vec<Point>, black_points: Vec<Point>) -> Self {
         Classification {
             k: (black_points.len() / red_points.len()) as i32,
             red_points,
@@ -81,11 +80,11 @@ impl Classification {
         }
     }
 
-    fn calc_distance(&mut self) -> Vec<(f64, Point, (Point, char))> {
-        let mut res: Vec<(f64, Point, (Point, char))> = vec![];
+    fn calc_distance(&mut self) -> Vec<(f64, Point, Point)> {
+        let mut res: Vec<(f64, Point, Point)> = vec![];
         for bp in &self.black_points {
             for rp in &self.red_points {
-                res.push((bp.distance(&rp.0), bp.clone(), rp.clone()))
+                res.push((bp.distance(&rp), bp.clone(), rp.clone()))
             }
         }
         res
@@ -97,48 +96,17 @@ impl Classification {
         distances.sort_by(|a, b| a.0.total_cmp(&b.0));
         let mut added = vec![];
         let mut res: HashMap<Point, Vec<(f64, Point)>> = HashMap::new();
-        // Specific to the cube. For example, we can deduce that if a face has been classified as U, we can ban its edges and corner facelets from being D
-        let opposites = HashMap::from([
-            ('U', 'D'),
-            ('D', 'U'),
-            ('L', 'R'),
-            ('R', 'L'),
-            ('F', 'B'),
-            ('B', 'F'),
-        ]);
-        let mut banned: HashMap<usize, Vec<char>> = HashMap::new();
-        for i in 0..54 {
-            banned.insert(i, Vec::new());
-        }
         for rp in self.red_points.clone() {
-            res.insert(rp.0, Vec::new());
+            res.insert(rp, Vec::new());
         }
         for dist in distances {
-            if added.contains(&dist.1) || banned.get(&dist.1.index).unwrap().contains(&dist.2 .1) {
+            if added.contains(&dist.1) {
                 continue;
             }
-            let arr = res.get_mut(&dist.2 .0).unwrap();
+            let arr = res.get_mut(&dist.2).unwrap();
             if arr.len() < self.k as usize {
                 arr.push((dist.0, dist.1));
                 added.push(dist.1);
-                let corner = CORNER_FACELET.iter().find(|x| x.contains(&dist.1.index));
-                let edge = EDGE_FACELET.iter().find(|x| x.contains(&dist.1.index));
-                if corner.is_some() {
-                    for elem in corner.unwrap() {
-                        banned
-                            .get_mut(elem)
-                            .unwrap()
-                            .push(opposites.get(&dist.2 .1).unwrap().clone())
-                    }
-                }
-                if edge.is_some() {
-                    for elem in edge.unwrap() {
-                        banned
-                            .get_mut(elem)
-                            .unwrap()
-                            .push(opposites.get(&dist.2 .1).unwrap().clone())
-                    }
-                }
             }
         }
         res

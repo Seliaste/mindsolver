@@ -3,13 +3,14 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
 
+use itertools::Itertools;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
 use paris::{error, info};
 
 use crate::classification::{Classification, Point};
 use crate::constants::{
-    CORNER_FACELET, EDGE_FACELET, get_corner_colors, get_edge_colors, SIDE_INDEXES,
+    CORNER_FACELET, get_corner_colors, SIDE_INDEXES,
 };
 
 /// Represents the cube faces and state
@@ -60,7 +61,7 @@ impl Cube {
         let centre_index = centre_to_face.keys();
         for centre in centre_index.clone() {
             let face = facelets.get(*centre).unwrap();
-            centres.push((face.clone(), centre_to_face[centre]));
+            centres.push(face.clone());
         }
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
@@ -145,8 +146,10 @@ impl Cube {
     }
 
     pub fn fixer(nota: String) -> String {
-        let mut notation: Vec<char> = nota.chars().collect();
+        let notation: Vec<char> = nota.chars().collect();
+        let mut possibilities: Vec<String> = Vec::new();
         let mut corners = Vec::new();
+        let mut corners_idx = Vec::new();
         let mut invalid_corners = Vec::new();
         let corner_colors = get_corner_colors();
         for corner in CORNER_FACELET {
@@ -176,81 +179,40 @@ impl Cube {
                 ))
             } else {
                 corners.push(hashset);
+                corners_idx.push([corner[0], corner[1], corner[2]])
             }
         }
-        let mut missing_corners: Vec<&HashSet<char>> = corner_colors
+        let missing_corners: Vec<&HashSet<char>> = corner_colors
             .iter()
             .filter(|x| !corners.contains(*x))
             .collect();
         if missing_corners.len() > 0 { error!("Missing corners are: {:?}", missing_corners); }
         if invalid_corners.len() > 0 { error!("Invalid corners are: {:?}", invalid_corners); }
         // fixing duplicate corners
-        for corner in invalid_corners {
-            let new = missing_corners
-                .iter()
-                .max_by_key(|&x1| x1.intersection(&HashSet::from(corner.0)).count())
-                .unwrap()
-                .to_owned();
-            missing_corners.remove(missing_corners.iter().position(|&x| x.eq(new)).unwrap());
-            for character in new.iter() {
-                if !corner.0.contains(character) {
-                    for i in 0..3 {
-                        if !new.contains(&corner.0[i]) {
-                            info!(
-                                "replaced {} by {} at index {}",
-                                notation[corner.1[i]],
-                                character.clone(),
-                                corner.1[i]
-                            );
-                            notation[corner.1[i]] = character.clone();
-                            break;
+        for permut in missing_corners.to_owned().iter().permutations(missing_corners.len()) {
+            let mut notatmp = notation.clone();
+            for (i,corner) in invalid_corners.iter().enumerate() {
+                let new = permut[i];
+                    for character in new.iter() {
+                        if !corner.0.contains(character) {
+                            for i in 0..3 {
+                                if !new.contains(&corner.0[i]) {
+                                    notatmp[corner.1[i]] = character.clone();
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
             }
+            possibilities.push(notatmp.iter().collect());
         }
-        let mut edges = Vec::new();
-        let mut invalid_edges = Vec::new();
-        let edges_color = get_edge_colors();
-        for edge in EDGE_FACELET {
-            let hashset = HashSet::from([notation[edge[0]], notation[edge[1]]]);
-            if !edges_color.contains(&hashset) {
-                invalid_edges.push(([notation[edge[0]], notation[edge[1]]], [edge[0], edge[1]]))
-            }
-            if edges.contains(&hashset) {
-                invalid_edges.push(([notation[edge[0]], notation[edge[1]]], [edge[0], edge[1]]))
-            } else {
-                edges.push(hashset);
-            }
-        }
-        let mut missing_edges: Vec<&HashSet<char>> =
-            edges_color.iter().filter(|x| !edges.contains(*x)).collect();
-        if missing_edges.len() > 0 { info!("Missing edges are: {:?}", missing_edges);}
-        if invalid_edges.len() > 0 { info!("Invalid edges are: {:?}", invalid_edges);}
-        // fixing duplicate corners
-        for edge in invalid_edges {
-            let new = missing_edges
-                .iter()
-                .max_by_key(|&x1| x1.intersection(&HashSet::from(edge.0)).count())
-                .unwrap()
-                .to_owned();
-            missing_edges.remove(missing_edges.iter().position(|&x| x.eq(new)).unwrap());
-            for character in new.iter() {
-                if !edge.0.contains(character) {
-                    for i in 0..2 {
-                        if !new.contains(&edge.0[i]) {
-                            info!(
-                                "replaced {} by {} at index {}",
-                                notation[edge.1[i]],
-                                character.clone(),
-                                edge.1[i]
-                            );
-                            notation[edge.1[i]] = character.clone();
-                            break;
-                        }
-                    }
-                }
-            }
+        for possibility in possibilities{
+            let face_cube =
+                FaceCube::try_from(possibility.as_str());
+            if face_cube.is_err() { continue }
+            let state = CubieCube::try_from(&face_cube.unwrap());
+            if state.is_err() { continue }
+            if state.unwrap().is_solvable() {return possibility}
         }
         notation.iter().collect()
     }
