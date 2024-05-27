@@ -80,8 +80,9 @@ fn main() -> Ev3Result<()> {
             .expect("Could not load scan file");
     }
     let cube_notation = cube.to_notation();
-    success!("Cube string is: {}", cube_notation);
-    let solution = cube.solve();
+    let fixed_notation = Cube::fixer(cube_notation);
+    success!("Cube string is: {}", fixed_notation);
+    let solution = Cube::solve(fixed_notation);
     info!("Solution is {}", solution);
     if !args.nosolve {
         for part in solution.get_all_moves() {
@@ -100,8 +101,8 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
-    cube.print_facelets();
-    success!("Cube string is: {}", cube_notation);
-    let solution = cube.solve();
+    let fixed_notation = Cube::fixer(cube_notation);
+    success!("Cube string is: {}", fixed_notation);
+    let solution = Cube::solve(fixed_notation);
     info!("Solution is {}", solution);
 }
