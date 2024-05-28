@@ -17,7 +17,7 @@ It uses statistical classification in order to achieve a better chance of succes
 
 You first need the rust toolchain. This project has been made and tested for the `nightly-2023-07-30-x86_64-unknown-linux-gnu` toolkit
 
-To build for the ev3dev robot, simply run:
+To build mindsolver for the ev3dev robot, simply run:
 ```shell
 cargo build --release
 ```  
@@ -25,12 +25,15 @@ The `--release` flag is optionnal but is recommended for slower compile time but
 
 Then copy your file on the robot with scp:
 ```shell
-scp target/armv5te-unknown-linux-musleabi/release/rubiks-cube-robot-rust robot@YOUR_ROBOT_IP:/home/robot/rubiks-cube-robot-rust
+scp target/armv5te-unknown-linux-musleabi/release/mindsolver robot@YOUR_ROBOT_IP:/home/robot/mindsolver
 ```
 Then, using ssh, simply run the executable using `brickrun`:
 ```shell
-brickrun -r ./rubiks-cube-robot-rust
+brickrun -r ./mindsolver
 ```
+
+Note that on the first run, a cache file will be generated to have a faster solving. 
+Scans will be saved in the scans directory
 
 ### Arguments
 
