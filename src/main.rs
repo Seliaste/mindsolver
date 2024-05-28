@@ -63,14 +63,17 @@ fn main() -> Ev3Result<()> {
         no_hardware(args);
         return Ok(());
     }
+
     let mut hw = Hardware::init(
         Duration::from_millis(args.sleep as u64),
         args.movement,
         args.iteration,
     )?;
     let mut cube = Cube::init();
+
     info!("Resetting sensor arm...");
     hw.reset_sensor_position()?;
+
     if args.file.is_none() {
         info!("Starting cube scan.");
         hw.scan_cube(&mut cube)?;
@@ -79,9 +82,11 @@ fn main() -> Ev3Result<()> {
         cube.import(args.file.unwrap())
             .expect("Could not load scan file");
     }
+
     let cube_notation = cube.to_notation();
     let fixed_notation = Cube::fixer(cube_notation);
     success!("Cube string is: {}", fixed_notation);
+
     let solution = Cube::solve(fixed_notation);
     info!("Solution is {}", solution);
     if !args.nosolve {

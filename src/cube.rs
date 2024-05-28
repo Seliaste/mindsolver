@@ -19,8 +19,9 @@ pub struct Cube {
     pub facelet_rgb_values: Vec<Point>,
     /// Faces that can be accessed by simply flipping. First one is the one currently down
     pub next_faces: [char; 4],
-    // right and left from the sensor POV
+    /// right from the sensor POV
     pub right_face: char,
+    /// left from the sensor POV
     pub left_face: char,
 }
 
@@ -89,6 +90,7 @@ impl Cube {
         string.iter().collect()
     }
 
+    /// takes a notation and returns a solution
     pub fn solve(notation: String) -> Solution {
         let table = read_table("./cache_file").unwrap();
         let mut solver = Solver::new(&table, 30, Some(5.));
@@ -98,7 +100,7 @@ impl Cube {
         solver.solve(state).expect("Could not solve cube")
     }
 
-    /// Saves the scan to file. Used for debugging
+    /// Saves the scan to file.
     pub fn export(&self) {
         fs::create_dir_all("scans").ok();
         let mut file = File::create(format!(
@@ -107,7 +109,7 @@ impl Cube {
         ))
             .unwrap();
         let mut string = String::new();
-        for point in self.facelet_rgb_values.iter().map(Point::export) {
+        for point in self.facelet_rgb_values.iter().map(Point::to_array) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
         }
         file.write_all(&format!("{}", string).into_bytes()).unwrap();
@@ -139,6 +141,7 @@ impl Cube {
         Ok(())
     }
 
+    /// Tries fixing and invalid solution. Won't do anything if solution is correct
     pub fn fixer(nota: String) -> String {
         let notation: Vec<char> = nota.chars().collect();
         let mut possibilities: Vec<String> = Vec::new();

@@ -24,36 +24,21 @@ impl PartialEq for Point {
 }
 
 impl Point {
-    pub fn distance(&self, other: &Self) -> f64 {
-        let res: f64 = ((self.x - other.x) / 3.).powi(2)
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        (((self.x - other.x) / 3.).powi(2)
             + (self.y - other.y).powi(2)
-            + (self.z - other.z).powi(2);
+            + (self.z - other.z).powi(2)).sqrt()
         // TODO: The /3. is a complete hack. Should be written in a more explicit way.
         // The reason for this is that the red amount is the one we can trust the less.
-        res.sqrt()
     }
 
-    /// Used in the scan saving feature
-    pub fn export(&self) -> [f64; 3] {
+    /// Returns an array of the three coordinates
+    pub fn to_array(&self) -> [f64; 3] {
         [self.x, self.y, self.z]
-    }
-
-    #[allow(dead_code)] // used for testing
-    pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
-        let mut res = vec![];
-        for i in 0..k {
-            let (x, y, z) = (
-                rand::random::<f64>() % bound,
-                rand::random::<f64>() % bound,
-                rand::random::<f64>() % bound,
-            );
-            res.push(Point { x, y, z, index: i });
-        }
-        res
     }
 }
 
-/// This represents a DIY classification technique.
+/// This is a DIY classification technique.
 /// In an n-dimension cloud, we want to separate red points and black points. Red points will represent a class.
 /// Black points need to be linked to a single red point. We don't want red points to be linked between them.
 /// Here, central face colors are red points and side colors are black points. Each red point has to be linked to k black points.
@@ -78,11 +63,11 @@ impl Classification {
         }
     }
 
-    fn calc_distance(&mut self) -> Vec<(f64, Point, Point)> {
+    fn calc_distances(&mut self) -> Vec<(f64, Point, Point)> {
         let mut res: Vec<(f64, Point, Point)> = vec![];
         for bp in &self.black_points {
             for rp in &self.red_points {
-                res.push((bp.distance(&rp), bp.clone(), rp.clone()))
+                res.push((bp.distance_to(&rp), bp.clone(), rp.clone()))
             }
         }
         res
@@ -90,7 +75,7 @@ impl Classification {
 
     /// Will return a hashmap with red points as keys and vectors of assigned black points.
     pub fn classify(&mut self) -> HashMap<Point, Vec<(f64, Point)>> {
-        let mut distances = self.calc_distance();
+        let mut distances = self.calc_distances();
         distances.sort_by(|a, b| a.0.total_cmp(&b.0));
         let mut added = vec![];
         let mut res: HashMap<Point, Vec<(f64, Point)>> = HashMap::new();
@@ -115,9 +100,22 @@ impl Classification {
 mod tests {
     use crate::classification::{Classification, Point};
 
+    pub fn rand_cloud(k: usize, bound: f64) -> Vec<Point> {
+        let mut res = vec![];
+        for i in 0..k {
+            let (x, y, z) = (
+                rand::random::<f64>() % bound,
+                rand::random::<f64>() % bound,
+                rand::random::<f64>() % bound,
+            );
+            res.push(Point { x, y, z, index: i });
+        }
+        res
+    }
+
     #[test]
     fn test_classify() {
-        let cloud = Point::rand_cloud(54, 100.);
+        let cloud = rand_cloud(54, 100.);
         let (rp, bp) = cloud.split_at(6);
         let mut clas = Classification::init(Vec::from(rp), Vec::from(bp));
         let res = clas.classify();
