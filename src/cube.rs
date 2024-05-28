@@ -77,18 +77,13 @@ impl Cube {
         let mut classification_corners = Classification::init(centres, corners);
         let res_corners = classification_corners.classify();
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
-        for key in res_sides.keys() {
-            let face_char = centre_to_face.get(&key.index).unwrap().clone();
-            string[key.index] = face_char;
-            for point in res_sides.get(key).unwrap() {
-                string[point.1.index] = face_char;
-            }
-        }
-        for key in res_corners.keys() {
-            let face_char = centre_to_face.get(&key.index).unwrap().clone();
-            string[key.index] = face_char;
-            for point in res_corners.get(key).unwrap() {
-                string[point.1.index] = face_char;
+        for res in [res_sides,res_corners]{
+            for class in res {
+                let face_char = centre_to_face.get(&class.0.index).unwrap().clone();
+                string[class.0.index] = face_char;
+                for point in class.1 {
+                    string[point.1.index] = face_char;
+                }
             }
         }
         string.iter().collect()
