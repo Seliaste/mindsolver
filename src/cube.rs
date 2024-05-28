@@ -9,9 +9,7 @@ use kewb::fs::read_table;
 use paris::{error, info};
 
 use crate::classification::{Classification, Point};
-use crate::constants::{
-    CORNER_FACELET, get_corner_colors, SIDE_INDEXES,
-};
+use crate::constants::{CORNER_FACELET, get_corner_colors, SIDE_INDEXES};
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -25,6 +23,7 @@ pub struct Cube {
     pub right_face: char,
     pub left_face: char,
 }
+
 impl Cube {
     pub fn init() -> Self {
         Self {
@@ -35,8 +34,8 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-            .take(54)
-            .collect(),
+                .take(54)
+                .collect(),
             next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',
@@ -111,7 +110,7 @@ impl Cube {
             "scans/{}",
             chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S")
         ))
-        .unwrap();
+            .unwrap();
         let mut string = String::new();
         for point in self.facelet_rgb_values.iter().map(Point::export) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
@@ -167,8 +166,7 @@ impl Cube {
                     ],
                     [corner[0], corner[1], corner[2]],
                 ))
-            }
-            if corners.contains(&hashset) {
+            } else if corners.contains(&hashset) {
                 invalid_corners.push((
                     [
                         notation[corner[0]],
@@ -186,33 +184,46 @@ impl Cube {
             .iter()
             .filter(|x| !corners.contains(*x))
             .collect();
-        if missing_corners.len() > 0 { error!("Missing corners are: {:?}", missing_corners); }
-        if invalid_corners.len() > 0 { error!("Invalid corners are: {:?}", invalid_corners); }
+        if missing_corners.len() > 0 {
+            error!("Missing corners are: {:?}", missing_corners);
+        }
+        if invalid_corners.len() > 0 {
+            error!("Invalid corners are: {:?}", invalid_corners);
+        }
         // fixing duplicate corners
-        for permut in missing_corners.to_owned().iter().permutations(missing_corners.len()) {
+        for permut in missing_corners
+            .to_owned()
+            .iter()
+            .permutations(missing_corners.len())
+        {
             let mut notatmp = notation.clone();
-            for (i,corner) in invalid_corners.iter().enumerate() {
+            for (i, corner) in invalid_corners.iter().enumerate() {
                 let new = permut[i];
-                    for character in new.iter() {
-                        if !corner.0.contains(character) {
-                            for i in 0..3 {
-                                if !new.contains(&corner.0[i]) {
-                                    notatmp[corner.1[i]] = character.clone();
-                                    break;
-                                }
+                for character in new.iter() {
+                    if !corner.0.contains(character) {
+                        for i in 0..3 {
+                            if !new.contains(&corner.0[i]) {
+                                notatmp[corner.1[i]] = character.clone();
+                                break;
                             }
                         }
                     }
+                }
             }
             possibilities.push(notatmp.iter().collect());
         }
-        for possibility in possibilities{
-            let face_cube =
-                FaceCube::try_from(possibility.as_str());
-            if face_cube.is_err() { continue }
+        for possibility in possibilities {
+            let face_cube = FaceCube::try_from(possibility.as_str());
+            if face_cube.is_err() {
+                continue;
+            }
             let state = CubieCube::try_from(&face_cube.unwrap());
-            if state.is_err() { continue }
-            if state.unwrap().is_solvable() {return possibility}
+            if state.is_err() {
+                continue;
+            }
+            if state.unwrap().is_solvable() {
+                return possibility;
+            }
         }
         notation.iter().collect()
     }
