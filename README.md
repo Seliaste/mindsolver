@@ -1,4 +1,4 @@
-# Rust Rubik's Cube solver robot
+# Mindsolver
 
 ## About
 
