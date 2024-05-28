@@ -1,5 +1,5 @@
 [package]
-name = "rubiks-cube-robot-rust"
+name = "mindsolver"
 version = "1.0.0"
 edition = "2021"
 

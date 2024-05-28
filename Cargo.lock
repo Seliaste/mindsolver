@@ -287,6 +287,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
+name = "mindsolver"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "colored",
+ "ev3dev-lang-rust",
+ "itertools",
+ "kewb",
+ "paris",
+ "rand",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -395,20 +409,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
-]
-
-[[package]]
-name = "rubiks-cube-robot-rust"
-version = "1.0.0"
-dependencies = [
- "chrono",
- "clap",
- "colored",
- "ev3dev-lang-rust",
- "itertools",
- "kewb",
- "paris",
- "rand",
 ]
 
 [[package]]
