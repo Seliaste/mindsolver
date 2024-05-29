@@ -1,5 +1,3 @@
-#![feature(portable_simd)]
-
 extern crate colored;
 extern crate ev3dev_lang_rust;
 extern crate paris;

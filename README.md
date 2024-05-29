@@ -15,7 +15,7 @@ It uses statistical classification in order to achieve a better chance of succes
 > This guide assumes you want to cross-compile from a computer with good resources.  
 > Compiling directly on the robot is possible but slow and unsupported
 
-You first need the rust toolchain. This project has been made and tested for the `nightly-2023-07-30-x86_64-unknown-linux-gnu` toolkit
+You first need the rust toolchain. This project has been tested for the 1.78.0 stable toolkit
 
 To build mindsolver for the ev3dev robot, simply run:
 ```shell
