@@ -142,7 +142,7 @@ impl Cube {
     }
 
     /// Tries fixing and invalid solution. Won't do anything if solution is correct
-    pub fn fixer(nota: String) -> String {
+    pub fn fixer(nota: String, log: bool) -> String {
         let notation: Vec<char> = nota.chars().collect();
         let mut possibilities: Vec<String> = Vec::new();
         let mut corners = Vec::new();
@@ -182,10 +182,10 @@ impl Cube {
             .iter()
             .filter(|x| !corners.contains(*x))
             .collect();
-        if missing_corners.len() > 0 {
+        if log && missing_corners.len() > 0 {
             error!("Missing corners are: {:?}", missing_corners);
         }
-        if invalid_corners.len() > 0 {
+        if log && invalid_corners.len() > 0 {
             error!("Invalid corners are: {:?}", invalid_corners);
         }
         // fixing duplicate corners
@@ -224,5 +224,36 @@ impl Cube {
             }
         }
         notation.iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use itertools::Itertools;
+    use kewb::FaceCube;
+    use kewb::generators::generate_random_state;
+    use rand::Rng;
+
+    use crate::cube::Cube;
+
+    const BANNED: [usize; 6] = [4,22,31,49,13,40];
+    #[test]
+    fn test_fixer() {
+        let mut rng = rand::thread_rng();
+        let mut success_counter = 0;
+        for _ in 0..100 {
+            let original = FaceCube::try_from(&generate_random_state()).unwrap().to_string();
+            let mut jammed = original.chars().collect_vec();
+            for _ in 0..rng.gen_range(0..4) {
+                let i1 = rng.gen_range(0..54);
+                let i2 = rng.gen_range(0..54);
+                if BANNED.contains(&i1) || BANNED.contains(&i2) {
+                    continue
+                }
+                (jammed[i1],jammed[i2]) = (jammed[i2],jammed[i1]);
+            }
+            if Cube::fixer(jammed.into_iter().collect(),false) == original { success_counter += 1;}
+        }
+        println!("Fixer managed to fix {success_counter} out of 100 jammed configs");
     }
 }
