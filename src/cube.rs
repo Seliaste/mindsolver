@@ -93,7 +93,7 @@ impl Cube {
     /// takes a notation and returns a solution
     pub fn solve(notation: String) -> Solution {
         let table = read_table("./cache_file").unwrap();
-        let mut solver = Solver::new(&table, 30, Some(5.));
+        let mut solver = Solver::new(&table, 30, None);
         let face_cube =
             FaceCube::try_from(notation.as_str()).expect("Could not convert string to faces");
         let state = CubieCube::try_from(&face_cube).expect("Invalid cube");
@@ -230,7 +230,7 @@ impl Cube {
         const BANNED: [usize; 6] = [4,22,31,49,13,40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).permutations(2);
-        for k in 1..5 {
+        for k in 0..5 {
             let to_be_tried = swap_options.clone().permutations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
