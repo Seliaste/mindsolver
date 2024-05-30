@@ -82,7 +82,7 @@ fn main() -> Ev3Result<()> {
     }
 
     let cube_notation = cube.to_notation();
-    let fixed_notation = Cube::fixer(cube_notation,true);
+    let fixed_notation = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string is: {}", fixed_notation);
 
     let solution = Cube::solve(fixed_notation);
@@ -104,7 +104,7 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
-    let fixed_notation = Cube::fixer(cube_notation,true);
+    let fixed_notation = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string is: {}", fixed_notation);
     let solution = Cube::solve(fixed_notation);
     info!("Solution is {}", solution);
