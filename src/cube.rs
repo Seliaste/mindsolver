@@ -225,6 +225,30 @@ impl Cube {
         }
         notation.iter().collect()
     }
+
+    pub fn bruteforce_fixer(nota: String) -> String {
+        const BANNED: [usize; 6] = [4,22,31,49,13,40];
+        let chars = nota.chars().collect_vec();
+        let swap_options = (0..54).permutations(2);
+        for k in 1..5 {
+            let to_be_tried = swap_options.clone().permutations(k);
+            for option in to_be_tried {
+                let mut try_nota = chars.clone();
+                for permutation in option {
+                    if BANNED.contains(&permutation[0]) && BANNED.contains(&permutation[1]) { continue }
+                    (try_nota[permutation[0]],try_nota[permutation[1]]) = (try_nota[permutation[1]],try_nota[permutation[0]])
+                }
+                let facecube_option = FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
+                if !facecube_option.is_err() {
+                    let x = CubieCube::try_from(&facecube_option.unwrap());
+                    if !x.is_err() && x.unwrap().is_solvable() {
+                        return try_nota.iter().collect::<String>()
+                    }
+                }
+            }
+        }
+        nota
+    }
 }
 
 #[cfg(test)]
@@ -241,10 +265,12 @@ mod tests {
     fn test_fixer() {
         let mut rng = rand::thread_rng();
         let mut success_counter = 0;
+        let mut false_positives = 0;
+        let mut no_result = 0;
         for _ in 0..100 {
             let original = FaceCube::try_from(&generate_random_state()).unwrap().to_string();
             let mut jammed = original.chars().collect_vec();
-            for _ in 0..rng.gen_range(0..4) {
+            for _ in 0..rng.gen_range(0..5) {
                 let i1 = rng.gen_range(0..54);
                 let i2 = rng.gen_range(0..54);
                 if BANNED.contains(&i1) || BANNED.contains(&i2) {
@@ -252,8 +278,40 @@ mod tests {
                 }
                 (jammed[i1],jammed[i2]) = (jammed[i2],jammed[i1]);
             }
-            if Cube::fixer(jammed.into_iter().collect(),false) == original { success_counter += 1;}
+            let jammed_string: String = jammed.into_iter().collect();
+            let fixed = Cube::fixer(jammed_string.clone(),false);
+            if fixed == original { success_counter += 1;}
+            else if fixed == jammed_string { no_result += 1; }
+            else { false_positives += 1; }
+
         }
-        println!("Fixer managed to fix {success_counter} out of 100 jammed configs");
+        println!("Fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
+    }
+
+    #[test]
+    fn test_bruteforce_fixer() {
+        let mut rng = rand::thread_rng();
+        let mut success_counter = 0;
+        let mut false_positives = 0;
+        let mut no_result = 0;
+        for _ in 0..100 {
+            let original = FaceCube::try_from(&generate_random_state()).unwrap().to_string();
+            let mut jammed = original.chars().collect_vec();
+            for _ in 0..rng.gen_range(0..3) {
+                let i1 = rng.gen_range(0..54);
+                let i2 = rng.gen_range(0..54);
+                if BANNED.contains(&i1) || BANNED.contains(&i2) {
+                    continue
+                }
+                (jammed[i1],jammed[i2]) = (jammed[i2],jammed[i1]);
+            }
+            let jammed_string: String = jammed.into_iter().collect();
+            let fixed = Cube::bruteforce_fixer(jammed_string.clone());
+            if fixed == original { success_counter += 1;}
+            else if fixed == jammed_string { no_result += 1; }
+            else { false_positives += 1; }
+
+        }
+        println!("Bruteforce fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
     }
 }

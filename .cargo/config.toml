@@ -3,3 +3,6 @@ target = "armv5te-unknown-linux-musleabi"
 
 [target.armv5te-unknown-linux-musleabi]
 linker = "rust-lld"
+
+[profile.dev]
+opt-level = 3               # Use all optis.
