@@ -1,15 +1,15 @@
+use std::{fs, iter};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
-use std::{fs, iter};
 
 use itertools::Itertools;
-use kewb::fs::read_table;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
-use paris::{error, info};
+use kewb::fs::read_table;
+use paris::info;
 
 use crate::classification::{Classification, ColorPoint};
-use crate::constants::{get_corner_colors, CORNER_FACELET, SIDE_INDEXES};
+use crate::constants::{CORNER_FACELET, EDGE_FACELET, get_corner_colors, get_edge_colors, SIDE_INDEXES};
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -142,95 +142,68 @@ impl Cube {
     }
 
     /// Tries fixing and invalid solution. Won't do anything if solution is correct
-    pub fn fixer(nota: String, log: bool) -> String {
-        let notation: Vec<char> = nota.chars().collect();
-        let mut possibilities: Vec<String> = Vec::new();
+    pub fn fixer(nota: String) -> String {
+
+        let chars: Vec<char> = nota.chars().collect();
         let mut corners = Vec::new();
         let mut corners_idx = Vec::new();
-        let mut invalid_corners = Vec::new();
+        let mut edges = Vec::new();
+        let mut invalid_idx = Vec::new();
         let corner_colors = get_corner_colors();
+        let edges_colors = get_edge_colors();
         for corner in CORNER_FACELET {
             let hashset = HashSet::from([
-                notation[corner[0]],
-                notation[corner[1]],
-                notation[corner[2]],
+                chars[corner[0]],
+                chars[corner[1]],
+                chars[corner[2]],
             ]);
             if !corner_colors.contains(&hashset) {
-                invalid_corners.push((
-                    [
-                        notation[corner[0]],
-                        notation[corner[1]],
-                        notation[corner[2]],
-                    ],
-                    [corner[0], corner[1], corner[2]],
-                ))
+                for c in corner {invalid_idx.push(c)};
             } else if corners.contains(&hashset) {
-                invalid_corners.push((
-                    [
-                        notation[corner[0]],
-                        notation[corner[1]],
-                        notation[corner[2]],
-                    ],
-                    [corner[0], corner[1], corner[2]],
-                ))
+                for c in corner {invalid_idx.push(c)};
             } else {
                 corners.push(hashset);
                 corners_idx.push([corner[0], corner[1], corner[2]])
             }
         }
-        let missing_corners: Vec<&HashSet<char>> = corner_colors
-            .iter()
-            .filter(|x| !corners.contains(*x))
-            .collect();
-        if log && missing_corners.len() > 0 {
-            error!("Missing corners are: {:?}", missing_corners);
+        for edge in EDGE_FACELET {
+            let hashset = HashSet::from([
+                chars[edge[0]],
+                chars[edge[1]],
+            ]);
+            if !edges_colors.contains(&hashset) || edges.contains(&hashset) {
+                for e in edge {invalid_idx.push(e)};
+            } else {
+                edges.push(hashset)
+            }
         }
-        if log && invalid_corners.len() > 0 {
-            error!("Invalid corners are: {:?}", invalid_corners);
-        }
-        // fixing duplicate corners
-        for permut in missing_corners
-            .to_owned()
-            .iter()
-            .permutations(missing_corners.len())
-        {
-            let mut notatmp = notation.clone();
-            for (i, corner) in invalid_corners.iter().enumerate() {
-                let new = permut[i];
-                for character in new.iter() {
-                    if !corner.0.contains(character) {
-                        for i in 0..3 {
-                            if !new.contains(&corner.0[i]) {
-                                notatmp[corner.1[i]] = character.clone();
-                                break;
-                            }
-                        }
+        let swap_options = invalid_idx.iter().permutations(2);
+        for k in 0..3 {
+            let to_be_tried = swap_options.clone().permutations(k);
+            for option in to_be_tried {
+                let mut try_nota = chars.clone();
+                for permutation in option {
+                    (try_nota[*permutation[0]], try_nota[*permutation[1]]) =
+                        (try_nota[*permutation[1]], try_nota[*permutation[0]])
+                }
+                let facecube_option =
+                    FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
+                if !facecube_option.is_err() {
+                    let x = CubieCube::try_from(&facecube_option.unwrap());
+                    if !x.is_err() && x.unwrap().is_solvable() {
+                        return try_nota.iter().collect::<String>();
                     }
                 }
             }
-            possibilities.push(notatmp.iter().collect());
         }
-        for possibility in possibilities {
-            let face_cube = FaceCube::try_from(possibility.as_str());
-            if face_cube.is_err() {
-                continue;
-            }
-            let state = CubieCube::try_from(&face_cube.unwrap());
-            if state.is_err() {
-                continue;
-            }
-            if state.unwrap().is_solvable() {
-                return possibility;
-            }
-        }
-        notation.iter().collect()
+        nota
     }
 
     pub fn bruteforce_fixer(nota: String) -> String {
         const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).permutations(2);
-        for k in 0..5 {
+        for k in 0..4 {
             let to_be_tried = swap_options.clone().permutations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
@@ -258,8 +231,8 @@ impl Cube {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
-    use kewb::generators::generate_random_state;
     use kewb::FaceCube;
+    use kewb::generators::generate_random_state;
     use rand::Rng;
 
     use crate::cube::Cube;
@@ -285,7 +258,7 @@ mod tests {
                 (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
             }
             let jammed_string: String = jammed.into_iter().collect();
-            let fixed = Cube::fixer(jammed_string.clone(), false);
+            let fixed = Cube::fixer(jammed_string.clone());
             if fixed == original {
                 success_counter += 1;
             } else if fixed == jammed_string {
