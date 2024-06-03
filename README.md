@@ -23,6 +23,8 @@ cargo build --release
 ```  
 The `--release` flag is optionnal but is recommended for slower compile time but faster execution time
 
+Alternatively, download an executable from the [latest release](https://github.com/Seliaste/mindsolver/releases/)
+
 Then copy your file on the robot with scp:
 ```shell
 scp target/armv5te-unknown-linux-musleabi/release/mindsolver robot@YOUR_ROBOT_IP:/home/robot/mindsolver
