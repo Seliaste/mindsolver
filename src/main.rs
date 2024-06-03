@@ -27,15 +27,15 @@ struct Args {
     file: Option<String>,
 
     /// Number of color sensor scans per facelet
-    #[clap(short, long, default_value_t = 5)]
+    #[clap(long, default_value_t = 5)]
     iteration: usize,
 
     /// Movement between each color sensor scan
-    #[clap(short, long, default_value_t = 8)]
+    #[clap(long, default_value_t = 8)]
     movement: i32,
 
     /// Sleep duration between each color sensor scan (in ms)
-    #[clap(short, long, default_value_t = 20)]
+    #[clap(long, default_value_t = 20)]
     sleep: u32,
 
     /// Disables the solution application
