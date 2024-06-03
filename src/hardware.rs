@@ -7,7 +7,7 @@ use ev3dev_lang_rust::sensors::ColorSensor;
 use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
-use crate::classification::Point;
+use crate::classification::ColorPoint;
 use crate::constants::SCAN_ORDER;
 use crate::cube::Cube;
 
@@ -153,10 +153,10 @@ impl Hardware {
             )
         );
         let idx = SCAN_ORDER[data.curr_idx];
-        data.facelet_rgb_values[idx] = Point {
-            x: rgb[0],
-            y: rgb[1],
-            z: rgb[2],
+        data.facelet_rgb_values[idx] = ColorPoint {
+            r: rgb[0],
+            g: rgb[1],
+            b: rgb[2],
             index: idx,
         };
         data.curr_idx += 1;

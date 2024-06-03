@@ -8,7 +8,7 @@ use kewb::fs::read_table;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
 use paris::{error, info};
 
-use crate::classification::{Classification, Point};
+use crate::classification::{Classification, ColorPoint};
 use crate::constants::{get_corner_colors, CORNER_FACELET, SIDE_INDEXES};
 
 /// Represents the cube faces and state
@@ -16,7 +16,7 @@ pub struct Cube {
     // Current facelet number
     pub curr_idx: usize,
     /// Stores RGB values in the order of the standard notation
-    pub facelet_rgb_values: Vec<Point>,
+    pub facelet_rgb_values: Vec<ColorPoint>,
     /// Faces that can be accessed by simply flipping. First one is the one currently down
     pub next_faces: [char; 4],
     /// right from the sensor POV
@@ -29,10 +29,10 @@ impl Cube {
     pub fn init() -> Self {
         Self {
             curr_idx: 0,
-            facelet_rgb_values: iter::repeat(Point {
-                x: 0.,
-                y: 0.,
-                z: 0.,
+            facelet_rgb_values: iter::repeat(ColorPoint {
+                r: 0.,
+                g: 0.,
+                b: 0.,
                 index: 0,
             })
             .take(54)
@@ -109,7 +109,7 @@ impl Cube {
         ))
         .unwrap();
         let mut string = String::new();
-        for point in self.facelet_rgb_values.iter().map(Point::to_array) {
+        for point in self.facelet_rgb_values.iter().map(ColorPoint::to_array) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
         }
         file.write_all(&format!("{}", string).into_bytes()).unwrap();
@@ -130,10 +130,10 @@ impl Cube {
                 .map(str::parse::<f64>)
                 .map(Result::unwrap)
                 .collect();
-            self.facelet_rgb_values[pos] = Point {
-                x: rgb[0],
-                y: rgb[1],
-                z: rgb[2],
+            self.facelet_rgb_values[pos] = ColorPoint {
+                r: rgb[0],
+                g: rgb[1],
+                b: rgb[2],
                 index: pos,
             };
         }
