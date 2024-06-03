@@ -39,13 +39,17 @@ Scans will be saved in the scans directory
 
 This software supports some command-line arguments to fine-tune your experience.
 ```text
-    -f, --file <FILE>              File source if using a previous scan file. Will skip scan
-    -h, --help                     Print help information
-    -i, --iteration <ITERATION>    Number of color sensor scans per facelet [default: 5]
-    -m, --movement <MOVEMENT>      Movement between each color sensor scan [default: 8]
-    -n, --nosolve                  Disables the solution application
-    -s, --sleep <SLEEP>            Sleep duration between each color sensor scan (in ms) [default 20]
-    -V, --version                  Print version information
+Usage: mindsolver [OPTIONS]
+
+Options:
+  -f, --file <FILE>            File source if using a previous scan file. Will skip scan
+      --iteration <ITERATION>  Number of color sensor scans per facelet [default: 5]
+      --movement <MOVEMENT>    Movement between each color sensor scan [default: 8]
+      --sleep <SLEEP>          Sleep duration between each color sensor scan (in ms) [default: 20]
+  -n, --nosolve                Disables the solution application
+  -s, --save                   Enables saving scan to file
+  -h, --help                   Print help
+  -V, --version                Print version
 ```
 
 ### Run without hardware
@@ -55,7 +59,3 @@ In which case, if you use both `-f` and `-n`,
 this program will skip hardware initialization.
 
 For example, `cargo run --target x86_64-unknown-linux-gnu -- --file scan_test_files/solvable.txt --nosolve`
-
-## What's left to do
-- Option to disable saving of scans
-- Check edges for duplicates or impossible pieces to try to fix them post-classification
