@@ -27,7 +27,8 @@ impl Point {
     pub fn distance_to(&self, other: &Self) -> f64 {
         (((self.x - other.x) / 3.).powi(2)
             + (self.y - other.y).powi(2)
-            + (self.z - other.z).powi(2)).sqrt()
+            + (self.z - other.z).powi(2))
+        .sqrt()
         // TODO: The /3. is a complete hack. Should be written in a more explicit way.
         // The reason for this is that the red amount is the one we can trust the less.
     }

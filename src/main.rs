@@ -41,6 +41,10 @@ struct Args {
     /// Disables the solution application
     #[clap(short, long)]
     nosolve: bool,
+
+    /// Enables saving scan to file
+    #[clap(short, long)]
+    save: bool,
 }
 
 fn create_cache() -> Result<(), Error> {
@@ -75,7 +79,9 @@ fn main() -> Ev3Result<()> {
     if args.file.is_none() {
         info!("Starting cube scan.");
         hw.scan_cube(&mut cube)?;
-        cube.export();
+        if args.save {
+            cube.export();
+        }
     } else {
         cube.import(args.file.unwrap())
             .expect("Could not load scan file");

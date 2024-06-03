@@ -1,15 +1,15 @@
-use std::{fs, iter};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::{fs, iter};
 
 use itertools::Itertools;
-use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
+use kewb::{CubieCube, FaceCube, Solution, Solver};
 use paris::{error, info};
 
 use crate::classification::{Classification, Point};
-use crate::constants::{CORNER_FACELET, get_corner_colors, SIDE_INDEXES};
+use crate::constants::{get_corner_colors, CORNER_FACELET, SIDE_INDEXES};
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -35,8 +35,8 @@ impl Cube {
                 z: 0.,
                 index: 0,
             })
-                .take(54)
-                .collect(),
+            .take(54)
+            .collect(),
             next_faces: ['R', 'D', 'L', 'U'],
             right_face: 'B',
             left_face: 'F',
@@ -78,7 +78,7 @@ impl Cube {
         let mut classification_corners = Classification::init(centres, corners);
         let res_corners = classification_corners.classify();
         let mut string: Vec<char> = iter::repeat(' ').take(54).collect();
-        for res in [res_sides,res_corners]{
+        for res in [res_sides, res_corners] {
             for class in res {
                 let face_char = centre_to_face.get(&class.0.index).unwrap().clone();
                 string[class.0.index] = face_char;
@@ -107,7 +107,7 @@ impl Cube {
             "scans/{}",
             chrono::Utc::now().format("%Y-%m-%d_%H-%M-%S")
         ))
-            .unwrap();
+        .unwrap();
         let mut string = String::new();
         for point in self.facelet_rgb_values.iter().map(Point::to_array) {
             string.push_str(format!("{}, {}, {}\n", point[0], point[1], point[2]).as_str())
@@ -227,7 +227,7 @@ impl Cube {
     }
 
     pub fn bruteforce_fixer(nota: String) -> String {
-        const BANNED: [usize; 6] = [4,22,31,49,13,40];
+        const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).permutations(2);
         for k in 0..5 {
@@ -235,14 +235,18 @@ impl Cube {
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
                 for permutation in option {
-                    if BANNED.contains(&permutation[0]) && BANNED.contains(&permutation[1]) { continue }
-                    (try_nota[permutation[0]],try_nota[permutation[1]]) = (try_nota[permutation[1]],try_nota[permutation[0]])
+                    if BANNED.contains(&permutation[0]) && BANNED.contains(&permutation[1]) {
+                        continue;
+                    }
+                    (try_nota[permutation[0]], try_nota[permutation[1]]) =
+                        (try_nota[permutation[1]], try_nota[permutation[0]])
                 }
-                let facecube_option = FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
+                let facecube_option =
+                    FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
                 if !facecube_option.is_err() {
                     let x = CubieCube::try_from(&facecube_option.unwrap());
                     if !x.is_err() && x.unwrap().is_solvable() {
-                        return try_nota.iter().collect::<String>()
+                        return try_nota.iter().collect::<String>();
                     }
                 }
             }
@@ -254,13 +258,13 @@ impl Cube {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
-    use kewb::FaceCube;
     use kewb::generators::generate_random_state;
+    use kewb::FaceCube;
     use rand::Rng;
 
     use crate::cube::Cube;
 
-    const BANNED: [usize; 6] = [4,22,31,49,13,40];
+    const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
     #[test]
     fn test_fixer() {
         let mut rng = rand::thread_rng();
@@ -268,22 +272,27 @@ mod tests {
         let mut false_positives = 0;
         let mut no_result = 0;
         for _ in 0..100 {
-            let original = FaceCube::try_from(&generate_random_state()).unwrap().to_string();
+            let original = FaceCube::try_from(&generate_random_state())
+                .unwrap()
+                .to_string();
             let mut jammed = original.chars().collect_vec();
             for _ in 0..rng.gen_range(0..5) {
                 let i1 = rng.gen_range(0..54);
                 let i2 = rng.gen_range(0..54);
                 if BANNED.contains(&i1) || BANNED.contains(&i2) {
-                    continue
+                    continue;
                 }
-                (jammed[i1],jammed[i2]) = (jammed[i2],jammed[i1]);
+                (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
             }
             let jammed_string: String = jammed.into_iter().collect();
-            let fixed = Cube::fixer(jammed_string.clone(),false);
-            if fixed == original { success_counter += 1;}
-            else if fixed == jammed_string { no_result += 1; }
-            else { false_positives += 1; }
-
+            let fixed = Cube::fixer(jammed_string.clone(), false);
+            if fixed == original {
+                success_counter += 1;
+            } else if fixed == jammed_string {
+                no_result += 1;
+            } else {
+                false_positives += 1;
+            }
         }
         println!("Fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
     }
@@ -295,22 +304,27 @@ mod tests {
         let mut false_positives = 0;
         let mut no_result = 0;
         for _ in 0..100 {
-            let original = FaceCube::try_from(&generate_random_state()).unwrap().to_string();
+            let original = FaceCube::try_from(&generate_random_state())
+                .unwrap()
+                .to_string();
             let mut jammed = original.chars().collect_vec();
             for _ in 0..rng.gen_range(0..3) {
                 let i1 = rng.gen_range(0..54);
                 let i2 = rng.gen_range(0..54);
                 if BANNED.contains(&i1) || BANNED.contains(&i2) {
-                    continue
+                    continue;
                 }
-                (jammed[i1],jammed[i2]) = (jammed[i2],jammed[i1]);
+                (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
             }
             let jammed_string: String = jammed.into_iter().collect();
             let fixed = Cube::bruteforce_fixer(jammed_string.clone());
-            if fixed == original { success_counter += 1;}
-            else if fixed == jammed_string { no_result += 1; }
-            else { false_positives += 1; }
-
+            if fixed == original {
+                success_counter += 1;
+            } else if fixed == jammed_string {
+                no_result += 1;
+            } else {
+                false_positives += 1;
+            }
         }
         println!("Bruteforce fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
     }

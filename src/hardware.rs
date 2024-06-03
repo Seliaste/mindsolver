@@ -2,9 +2,9 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
-use ev3dev_lang_rust::Ev3Result;
 use ev3dev_lang_rust::motors::{MotorPort, TachoMotor};
 use ev3dev_lang_rust::sensors::ColorSensor;
+use ev3dev_lang_rust::Ev3Result;
 use paris::{info, log, success};
 
 use crate::classification::Point;
