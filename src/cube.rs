@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use itertools::Itertools;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
-use paris::info;
+use paris::{info, log};
 
 use crate::classification::{Classification, ColorPoint};
 use crate::constants::{CORNER_FACELET, EDGE_FACELET, get_corner_colors, get_edge_colors, SIDE_INDEXES};
@@ -178,7 +178,8 @@ impl Cube {
             }
         }
         let swap_options = invalid_idx.iter().permutations(2);
-        for k in 0..3 {
+        for k in 0..4 {
+            log!("Exploring depth {k}...");
             let to_be_tried = swap_options.clone().permutations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
