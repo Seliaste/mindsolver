@@ -117,6 +117,7 @@ impl Hardware {
         self.sensor_motor.run_forever()?;
         self.sensor_motor
             .wait_until(TachoMotor::STATE_STALLED, None);
+        Self::run_for_deg(&self.sensor_motor,-10)?;
         self.sensor_motor.stop()?;
         Ok(())
     }
@@ -216,10 +217,11 @@ impl Hardware {
 
     /// Scans the face facing up and adds the colours to the cube struct
     pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
+        self.sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
         if self.locked {
             self.unlock_cube()?;
         }
-        Hardware::run_for_deg(&self.sensor_motor, -680)?;
+        Hardware::run_for_deg(&self.sensor_motor, -670)?;
         self.sensor_scan(cube)?;
         let offsets = [100, -20, 10, 10];
         for i in 0..4 {
@@ -236,7 +238,7 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
-
+        self.sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_BRAKE)?; // we reset the stop action to brake so that the sensor doesn't overheat while doing nothing
         Ok(())
     }
 
