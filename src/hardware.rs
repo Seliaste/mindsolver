@@ -141,9 +141,9 @@ impl Hardware {
             })
             .map(|x| x / self.iterations as f64);
         let rgb = [
-            (scan_avg[0] * 1.7) * (255. / 1020.), // hardcoded correction values
+            (scan_avg[0]) * (255. / 1020.), // hardcoded correction values
             scan_avg[1] * (255. / 1020.),
-            (scan_avg[2] * 2.) * (255. / 1020.),
+            (scan_avg[2]) * (255. / 1020.),
         ];
         log!(
             "Scanned {}",
