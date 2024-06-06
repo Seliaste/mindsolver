@@ -19,6 +19,7 @@ pub struct Hardware {
     pub flipper_motor: TachoMotor,
     /// Motor for the sensor arm
     pub sensor_motor: TachoMotor,
+    /// Color sensor
     pub color_sensor: ColorSensor,
     /// Represents whether the flipper arm is locking the cube
     pub locked: bool,
@@ -34,21 +35,16 @@ impl Hardware {
     pub fn init(sleep_duration: Duration, movement: i32, iterations: usize) -> Ev3Result<Self> {
         let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
         base_motor.set_speed_sp(base_motor.get_max_speed()?)?;
-        base_motor.set_ramp_down_sp(0)?;
-        base_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
-
         let flipper_motor: TachoMotor = TachoMotor::get(MotorPort::OutD)?;
         flipper_motor.set_speed_sp(base_motor.get_max_speed()? / 3)?;
-        flipper_motor.set_ramp_down_sp(0)?;
-        flipper_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
-
         let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
         sensor_motor.reset()?;
         sensor_motor.set_speed_sp((base_motor.get_max_speed()? as f32 / 1.5) as i32)?;
-        sensor_motor.set_ramp_down_sp(0)?;
-        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
-        sensor_motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
-
+        for motor in [&base_motor, &flipper_motor, &sensor_motor] {
+            motor.set_ramp_down_sp(0)?;
+            motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
+            motor.set_polarity(TachoMotor::POLARITY_NORMAL)?;
+        }
         let color_sensor = ColorSensor::find()?;
         color_sensor.set_mode_rgb_raw()?;
         return Ok(Hardware {
@@ -61,6 +57,22 @@ impl Hardware {
             movement,
             iterations,
         });
+    }
+
+    pub fn shutdown() -> Ev3Result<()> {
+        let base_motor: TachoMotor = TachoMotor::get(MotorPort::OutC)?;
+        let flipper_motor: TachoMotor = TachoMotor::get(MotorPort::OutD)?;
+        let sensor_motor: TachoMotor = TachoMotor::get(MotorPort::OutB)?;
+        base_motor.set_stop_action(TachoMotor::STOP_ACTION_COAST)?;
+        base_motor.reset()?;
+        base_motor.stop()?;
+        flipper_motor.set_stop_action(TachoMotor::STOP_ACTION_COAST)?;
+        flipper_motor.reset()?;
+        flipper_motor.stop()?;
+        sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_COAST)?;
+        sensor_motor.reset()?;
+        sensor_motor.stop()?;
+        Ok(())
     }
 
     pub fn run_for_deg(motor: &TachoMotor, degree: i32) -> Ev3Result<()> {
@@ -117,7 +129,7 @@ impl Hardware {
         self.sensor_motor.run_forever()?;
         self.sensor_motor
             .wait_until(TachoMotor::STATE_STALLED, None);
-        Self::run_for_deg(&self.sensor_motor,-10)?;
+        Self::run_for_deg(&self.sensor_motor, -10)?;
         self.sensor_motor.stop()?;
         Ok(())
     }
@@ -134,17 +146,12 @@ impl Hardware {
             &self.sensor_motor,
             (-self.movement) * self.iterations as i32,
         )?;
-        let scan_avg = scans
+        let rgb = scans
             .iter()
             .fold([0.; 3], |acc, x| {
                 [acc[0] + x[0], acc[1] + x[1], acc[2] + x[2]]
             })
-            .map(|x| x / self.iterations as f64);
-        let rgb = [
-            (scan_avg[0]) * (255. / 1020.), // hardcoded correction values
-            scan_avg[1] * (255. / 1020.),
-            (scan_avg[2]) * (255. / 1020.),
-        ];
+            .map(|x| x / self.iterations as f64 * (255. / 1020.));
         log!(
             "Scanned {}",
             format!("{:?}", rgb.map(|x| { x as u8 })).truecolor(
@@ -159,7 +166,7 @@ impl Hardware {
             g: rgb[1],
             b: rgb[2],
             index: idx,
-        };
+        }; 
         data.curr_idx += 1;
         Ok(())
     }
@@ -217,7 +224,8 @@ impl Hardware {
 
     /// Scans the face facing up and adds the colours to the cube struct
     pub fn scan_face(&mut self, cube: &mut Cube) -> Ev3Result<()> {
-        self.sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
+        self.sensor_motor
+            .set_stop_action(TachoMotor::STOP_ACTION_HOLD)?;
         if self.locked {
             self.unlock_cube()?;
         }
@@ -238,7 +246,8 @@ impl Hardware {
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
-        self.sensor_motor.set_stop_action(TachoMotor::STOP_ACTION_BRAKE)?; // we reset the stop action to brake so that the sensor doesn't overheat while doing nothing
+        self.sensor_motor
+            .set_stop_action(TachoMotor::STOP_ACTION_COAST)?; // we reset the stop action to brake so that the sensor doesn't overheat while doing nothing
         Ok(())
     }
 

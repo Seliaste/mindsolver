@@ -142,11 +142,12 @@ impl Cube {
     }
 
     /// Tries fixing and invalid solution. Won't do anything if solution is correct
+    #[allow(dead_code)]
     pub fn fixer(nota: String) -> String {
 
         let chars: Vec<char> = nota.chars().collect();
         let mut corners = Vec::new();
-        let mut corners_idx = Vec::new();
+        let mut corners_idx: Vec<[usize;3]> = Vec::new();
         let mut edges = Vec::new();
         let mut invalid_idx = Vec::new();
         let corner_colors = get_corner_colors();
@@ -161,6 +162,9 @@ impl Cube {
                 for c in corner {invalid_idx.push(c)};
             } else if corners.contains(&hashset) {
                 for c in corner {invalid_idx.push(c)};
+                for c in corners_idx[corners.iter().position(|x| *x == hashset).unwrap()].clone() {
+                    if !invalid_idx.contains(&c) {invalid_idx.push(c.clone())};
+                }
             } else {
                 corners.push(hashset);
                 corners_idx.push([corner[0], corner[1], corner[2]])
@@ -200,11 +204,12 @@ impl Cube {
         nota
     }
 
+    #[allow(dead_code)]
     pub fn bruteforce_fixer(nota: String) -> String {
         const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).permutations(2);
-        for k in 0..4 {
+        for k in 0..3 {
             let to_be_tried = swap_options.clone().permutations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
