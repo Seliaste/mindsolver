@@ -181,10 +181,10 @@ impl Cube {
                 edges.push(hashset)
             }
         }
-        let swap_options = invalid_idx.iter().permutations(2);
-        for k in 0..4 {
+        let swap_options = invalid_idx.iter().combinations(2);
+        for k in 0..3{
             log!("Exploring depth {k}...");
-            let to_be_tried = swap_options.clone().permutations(k);
+            let to_be_tried = swap_options.clone().combinations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
                 for permutation in option {
@@ -208,9 +208,9 @@ impl Cube {
     pub fn bruteforce_fixer(nota: String) -> String {
         const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
-        let swap_options = (0..54).permutations(2);
-        for k in 0..3 {
-            let to_be_tried = swap_options.clone().permutations(k);
+        let swap_options = (0..54).combinations(2);
+        for k in 0..10 {
+            let to_be_tried = swap_options.clone().combinations(k);
             for option in to_be_tried {
                 let mut try_nota = chars.clone();
                 for permutation in option {
