@@ -216,8 +216,8 @@ impl Hardware {
             Hardware::run_for_rot(&self.base_motor, -0.125)?;
         } else {
             // 180deg
-            Hardware::run_for_rot(&self.base_motor, 1.675)?;
-            Hardware::run_for_rot(&self.base_motor, -0.175)?;
+            Hardware::run_for_rot(&self.base_motor, 1.650)?;
+            Hardware::run_for_rot(&self.base_motor, -0.150)?;
         }
         return Ok(());
     }
