@@ -205,7 +205,7 @@ impl Cube {
     }
 
     #[allow(dead_code)]
-    pub fn bruteforce_fixer(nota: String) -> String {
+    pub fn bruteforce_fixer(nota: String) -> (String,usize) {
         const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).combinations(2);
@@ -225,12 +225,12 @@ impl Cube {
                 if !facecube_option.is_err() {
                     let x = CubieCube::try_from(&facecube_option.unwrap());
                     if !x.is_err() && x.unwrap().is_solvable() {
-                        return try_nota.iter().collect::<String>();
+                        return (try_nota.iter().collect::<String>(),k);
                     }
                 }
             }
         }
-        nota
+        (nota,0)
     }
 }
 
@@ -296,7 +296,7 @@ mod tests {
                 (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
             }
             let jammed_string: String = jammed.into_iter().collect();
-            let fixed = Cube::bruteforce_fixer(jammed_string.clone());
+            let fixed = Cube::bruteforce_fixer(jammed_string.clone()).0;
             if fixed == original {
                 success_counter += 1;
             } else if fixed == jammed_string {
