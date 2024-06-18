@@ -235,14 +235,22 @@ impl Hardware {
         for i in 0..4 {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
-            self.rot_base45()?;
+            if i >= 2 {
+                Self::run_for_rot(&self.base_motor, 0.425)?;
+            } else {
+                self.rot_base45()?;
+            }
             if i == 0 {
                 Hardware::run_for_deg(&self.sensor_motor, 20)?;
             } else {
                 Hardware::run_for_deg(&self.sensor_motor, 40)?;
             }
             self.sensor_scan(cube)?;
-            self.rot_base45()?;
+            if i >= 2 {
+                Self::run_for_rot(&self.base_motor, 0.325)?;
+            } else {
+                self.rot_base45()?;
+            }
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
