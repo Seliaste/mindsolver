@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
 
+use colored::Colorize;
 use itertools::Itertools;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
@@ -231,6 +232,61 @@ impl Cube {
             }
         }
         (nota,0)
+    }
+
+    pub fn print_graphical(nota: &str) {
+        fn print_letter(idx: usize, chars: &Vec<char>){
+            let colors:HashMap<char,[u8;3]> = HashMap::from([
+                ('U',[255,255,255]),
+                ('R',[0,0,255]),
+                ('F',[255,0,0]),
+                ('D',[255,255,0]),
+                ('L',[0,255,0]),
+                ('B',[255,165,0]),
+            ]);
+            let letter = chars[idx];
+            let color = colors.get(&letter).unwrap();
+            print!("{}", letter.to_string().as_str().truecolor(color[0], color[1], color[2]));
+        }
+        
+        let chars = nota.chars().collect_vec();
+        // up
+        for i in 0..3 {
+            print!("    ");
+            for j in 0..3 {
+                print_letter(3 * i + j,&chars);
+            }
+            println!();
+        }
+        println!();
+        // left, front, right, back
+        for i in 0..3 {
+            for j in 0..3 {
+                print_letter(36 + 3 * i + j, &chars)
+            }
+            print!(" ");
+            for j in 0..3 {
+                print_letter(18 + 3 * i + j,&chars);
+            }
+            print!(" ");
+            for j in 0..3 {
+                print_letter(9 + 3 * i + j,&chars);
+            }
+            print!(" ");
+            for j in 0..3 {
+                print_letter(45 + 3 * i + j,&chars);
+            }
+            println!();
+        }
+        println!();
+        // down
+        for i in 0..3 {
+            print!("    ");
+            for j in 0..3 {
+                print_letter(27 + 3 * i + j,&chars);
+            }
+            println!();
+        }
     }
 }
 

@@ -3,6 +3,7 @@ extern crate ev3dev_lang_rust;
 extern crate paris;
 
 use std::path::Path;
+use std::thread::sleep;
 use std::time::Duration;
 
 use clap::Parser;
@@ -93,8 +94,10 @@ fn main() -> Ev3Result<()> {
 
     let cube_notation = cube.to_notation();
     info!("Unfixed cube string is: {}", cube_notation);
+    Cube::print_graphical(cube_notation.as_str());
     let (fixed_notation,steps) = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
+    Cube::print_graphical(fixed_notation.as_str());
 
     let solution = Cube::solve(fixed_notation);
     info!("Solution is {}", solution);
@@ -107,6 +110,7 @@ fn main() -> Ev3Result<()> {
         }
         success!("Cube solved! I hope you enjoyed :D");
     }
+    sleep(Duration::from_secs(1)); // waiting for the flipper to stabilize
     Hardware::shutdown()?;
     Ok(())
 }
@@ -118,6 +122,7 @@ fn no_hardware(args: Args) {
     let cube_notation = cube.to_notation();
     let (fixed_notation,steps) = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
-    let solution = Cube::solve(fixed_notation);
-    info!("Solution is {}", solution);
+    Cube::print_graphical(fixed_notation.as_str());
+    // let solution = Cube::solve(fixed_notation);
+    // info!("Solution is {}", solution);
 }
