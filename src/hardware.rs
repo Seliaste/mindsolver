@@ -166,7 +166,7 @@ impl Hardware {
             g: rgb[1],
             b: rgb[2],
             index: idx,
-        }; 
+        };
         data.curr_idx += 1;
         Ok(())
     }

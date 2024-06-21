@@ -107,7 +107,12 @@ mod tests {
                 rand::random::<f64>() % bound,
                 rand::random::<f64>() % bound,
             );
-            res.push(ColorPoint { r: x, g: y, b: z, index: i });
+            res.push(ColorPoint {
+                r: x,
+                g: y,
+                b: z,
+                index: i,
+            });
         }
         res
     }

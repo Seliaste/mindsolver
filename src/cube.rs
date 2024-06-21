@@ -1,16 +1,18 @@
-use std::{fs, iter};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::{fs, iter};
 
 use colored::Colorize;
 use itertools::Itertools;
-use kewb::{CubieCube, FaceCube, Solution, Solver};
 use kewb::fs::read_table;
+use kewb::{CubieCube, FaceCube, Solution, Solver};
 use paris::{info, log};
 
 use crate::classification::{Classification, ColorPoint};
-use crate::constants::{CORNER_FACELET, EDGE_FACELET, get_corner_colors, get_edge_colors, SIDE_INDEXES};
+use crate::constants::{
+    get_corner_colors, get_edge_colors, CORNER_FACELET, EDGE_FACELET, SIDE_INDEXES,
+};
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -145,26 +147,27 @@ impl Cube {
     /// Tries fixing and invalid solution. Won't do anything if solution is correct
     #[allow(dead_code)]
     pub fn fixer(nota: String) -> String {
-
         let chars: Vec<char> = nota.chars().collect();
         let mut corners = Vec::new();
-        let mut corners_idx: Vec<[usize;3]> = Vec::new();
+        let mut corners_idx: Vec<[usize; 3]> = Vec::new();
         let mut edges = Vec::new();
         let mut invalid_idx = Vec::new();
         let corner_colors = get_corner_colors();
         let edges_colors = get_edge_colors();
         for corner in CORNER_FACELET {
-            let hashset = HashSet::from([
-                chars[corner[0]],
-                chars[corner[1]],
-                chars[corner[2]],
-            ]);
+            let hashset = HashSet::from([chars[corner[0]], chars[corner[1]], chars[corner[2]]]);
             if !corner_colors.contains(&hashset) {
-                for c in corner {invalid_idx.push(c)};
+                for c in corner {
+                    invalid_idx.push(c)
+                }
             } else if corners.contains(&hashset) {
-                for c in corner {invalid_idx.push(c)};
+                for c in corner {
+                    invalid_idx.push(c)
+                }
                 for c in corners_idx[corners.iter().position(|x| *x == hashset).unwrap()].clone() {
-                    if !invalid_idx.contains(&c) {invalid_idx.push(c.clone())};
+                    if !invalid_idx.contains(&c) {
+                        invalid_idx.push(c.clone())
+                    };
                 }
             } else {
                 corners.push(hashset);
@@ -172,18 +175,17 @@ impl Cube {
             }
         }
         for edge in EDGE_FACELET {
-            let hashset = HashSet::from([
-                chars[edge[0]],
-                chars[edge[1]],
-            ]);
+            let hashset = HashSet::from([chars[edge[0]], chars[edge[1]]]);
             if !edges_colors.contains(&hashset) || edges.contains(&hashset) {
-                for e in edge {invalid_idx.push(e)};
+                for e in edge {
+                    invalid_idx.push(e)
+                }
             } else {
                 edges.push(hashset)
             }
         }
         let swap_options = invalid_idx.iter().combinations(2);
-        for k in 0..3{
+        for k in 0..3 {
             log!("Exploring depth {k}...");
             let to_be_tried = swap_options.clone().combinations(k);
             for option in to_be_tried {
@@ -206,7 +208,7 @@ impl Cube {
     }
 
     #[allow(dead_code)]
-    pub fn bruteforce_fixer(nota: String) -> (String,usize) {
+    pub fn bruteforce_fixer(nota: String) -> (String, usize) {
         const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
         let chars = nota.chars().collect_vec();
         let swap_options = (0..54).combinations(2);
@@ -226,35 +228,41 @@ impl Cube {
                 if !facecube_option.is_err() {
                     let x = CubieCube::try_from(&facecube_option.unwrap());
                     if !x.is_err() && x.unwrap().is_solvable() {
-                        return (try_nota.iter().collect::<String>(),k);
+                        return (try_nota.iter().collect::<String>(), k);
                     }
                 }
             }
         }
-        (nota,0)
+        (nota, 0)
     }
 
     pub fn print_graphical(nota: &str) {
-        fn print_letter(idx: usize, chars: &Vec<char>){
-            let colors:HashMap<char,[u8;3]> = HashMap::from([
-                ('U',[255,255,255]),
-                ('R',[0,0,255]),
-                ('F',[255,0,0]),
-                ('D',[255,255,0]),
-                ('L',[0,255,0]),
-                ('B',[255,165,0]),
+        fn print_letter(idx: usize, chars: &Vec<char>) {
+            let colors: HashMap<char, [u8; 3]> = HashMap::from([
+                ('U', [255, 255, 255]),
+                ('R', [0, 0, 255]),
+                ('F', [255, 0, 0]),
+                ('D', [255, 255, 0]),
+                ('L', [0, 255, 0]),
+                ('B', [255, 165, 0]),
             ]);
             let letter = chars[idx];
             let color = colors.get(&letter).unwrap();
-            print!("{}", letter.to_string().as_str().truecolor(color[0], color[1], color[2]));
+            print!(
+                "{}",
+                letter
+                    .to_string()
+                    .as_str()
+                    .truecolor(color[0], color[1], color[2])
+            );
         }
-        
+
         let chars = nota.chars().collect_vec();
         // up
         for i in 0..3 {
             print!("    ");
             for j in 0..3 {
-                print_letter(3 * i + j,&chars);
+                print_letter(3 * i + j, &chars);
             }
             println!();
         }
@@ -266,15 +274,15 @@ impl Cube {
             }
             print!(" ");
             for j in 0..3 {
-                print_letter(18 + 3 * i + j,&chars);
+                print_letter(18 + 3 * i + j, &chars);
             }
             print!(" ");
             for j in 0..3 {
-                print_letter(9 + 3 * i + j,&chars);
+                print_letter(9 + 3 * i + j, &chars);
             }
             print!(" ");
             for j in 0..3 {
-                print_letter(45 + 3 * i + j,&chars);
+                print_letter(45 + 3 * i + j, &chars);
             }
             println!();
         }
@@ -283,7 +291,7 @@ impl Cube {
         for i in 0..3 {
             print!("    ");
             for j in 0..3 {
-                print_letter(27 + 3 * i + j,&chars);
+                print_letter(27 + 3 * i + j, &chars);
             }
             println!();
         }
@@ -293,8 +301,8 @@ impl Cube {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
-    use kewb::FaceCube;
     use kewb::generators::generate_random_state;
+    use kewb::FaceCube;
     use rand::Rng;
 
     use crate::cube::Cube;

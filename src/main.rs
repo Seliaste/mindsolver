@@ -75,7 +75,8 @@ fn main() -> Ev3Result<()> {
     ctrlc::set_handler(move || {
         Hardware::shutdown().expect("Could not shutdown hardware");
         std::process::exit(0);
-    }).expect("Could not define ctlr-c handler");
+    })
+    .expect("Could not define ctlr-c handler");
     let mut cube = Cube::init();
 
     info!("Resetting sensor arm...");
@@ -95,7 +96,7 @@ fn main() -> Ev3Result<()> {
     let cube_notation = cube.to_notation();
     info!("Unfixed cube string is: {}", cube_notation);
     Cube::print_graphical(cube_notation.as_str());
-    let (fixed_notation,steps) = Cube::bruteforce_fixer(cube_notation);
+    let (fixed_notation, steps) = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
     Cube::print_graphical(fixed_notation.as_str());
 
@@ -120,7 +121,7 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
-    let (fixed_notation,steps) = Cube::bruteforce_fixer(cube_notation);
+    let (fixed_notation, steps) = Cube::bruteforce_fixer(cube_notation);
     success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
     Cube::print_graphical(fixed_notation.as_str());
     // let solution = Cube::solve(fixed_notation);
