@@ -17,7 +17,7 @@ It uses statistical classification in order to achieve a better chance of succes
 
 You first need the rust toolchain. This project has been tested for the 1.78.0 stable toolkit
 
-To build mindsolver for the ev3dev robot, simply run:
+To build mindsolver for a device running ev3dev, simply run:
 ```shell
 cargo build --release
 ```  
