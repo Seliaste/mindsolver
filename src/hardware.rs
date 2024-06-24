@@ -135,6 +135,22 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
+
+        fn median(data: &Vec<f64>) -> f64 {
+            if data.len() == 0 {
+                return 0.;
+            } else {
+                let mut data = data.clone();
+                data.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let mid = data.len() / 2;
+                if data.len() % 2 == 0 {
+                    return (data[mid + 1] + data[mid]) / 2.;
+                } else {
+                    return data[mid];
+                }
+            }
+        }
+
         let mut scans = vec![[0.; 3]; self.iterations];
         for i in 0..self.iterations {
             let scan = self.color_sensor.get_rgb()?;
@@ -146,18 +162,17 @@ impl Hardware {
             &self.sensor_motor,
             (-self.movement) * self.iterations as i32,
         )?;
-        let rgb = scans
-            .iter()
-            .fold([0.; 3], |acc, x| {
-                [acc[0] + x[0], acc[1] + x[1], acc[2] + x[2]]
-            })
-            .map(|x| x / self.iterations as f64 * (255. / 1020.));
+        let rgb = [
+            median(&scans.iter().map(|x| x[0]).collect::<Vec<f64>>()),
+            median(&scans.iter().map(|x| x[1]).collect::<Vec<f64>>()),
+            median(&scans.iter().map(|x| x[2]).collect::<Vec<f64>>()),
+        ];
         log!(
             "Scanned {}",
-            format!("{:?}", rgb.map(|x| { x as u8 })).truecolor(
-                rgb[0] as u8,
-                rgb[1] as u8,
-                rgb[2] as u8
+            format!("{:?}", rgb.map(|x| { (x/1020.*255.) as u8 })).truecolor(
+                (rgb[0]/1020.*255.) as u8,
+                (rgb[1]/1020.*255.) as u8,
+                (rgb[2]/1020.*255.) as u8
             )
         );
         let idx = SCAN_ORDER[data.curr_idx];
@@ -216,8 +231,9 @@ impl Hardware {
             Hardware::run_for_rot(&self.base_motor, -0.125)?;
         } else {
             // 180deg
-            Hardware::run_for_rot(&self.base_motor, 1.650)?;
-            Hardware::run_for_rot(&self.base_motor, -0.150)?;
+            Hardware::run_for_rot(&self.base_motor, 1.575)?;
+            Hardware::run_for_rot(&self.base_motor, -0.075)?;
+            // Hardware::run_for_rot(&self.base_motor, 1.5)?;
         }
         return Ok(());
     }
