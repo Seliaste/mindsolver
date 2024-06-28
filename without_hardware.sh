@@ -1,1 +1,1 @@
-cargo run --release --target x86_64-unknown-linux-gnu -- --file scan_test_files/solvable.txt --nosolve
+cargo run --target x86_64-unknown-linux-gnu -- --file scan_test_files/solvable.txt --nosolve
