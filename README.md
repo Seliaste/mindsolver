@@ -56,7 +56,7 @@ Options:
 
 ### Run without hardware
 
-You might want to run the program on your own regular computer without hardware.  
+You might want to run the program on your own desktop computer without hardware.  
 In which case, if you use both `-f` and `-n`,
 this program will skip hardware initialization.
 
