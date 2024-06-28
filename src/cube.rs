@@ -1,18 +1,16 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::{fs, iter};
+use std::{char, fs, iter};
 
 use colored::Colorize;
 use itertools::Itertools;
 use kewb::fs::read_table;
 use kewb::{CubieCube, FaceCube, Solution, Solver};
-use paris::{info, log};
+use paris::info;
 
 use crate::classification::{Classification, ColorPoint};
-use crate::constants::{
-    get_corner_colors, get_edge_colors, CORNER_FACELET, EDGE_FACELET, SIDE_INDEXES,
-};
+use crate::constants::SIDE_INDEXES;
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -144,98 +142,6 @@ impl Cube {
         Ok(())
     }
 
-    /// Tries fixing and invalid solution. Won't do anything if solution is correct
-    #[allow(dead_code)]
-    pub fn fixer(nota: String) -> String {
-        let chars: Vec<char> = nota.chars().collect();
-        let mut corners = Vec::new();
-        let mut corners_idx: Vec<[usize; 3]> = Vec::new();
-        let mut edges = Vec::new();
-        let mut invalid_idx = Vec::new();
-        let corner_colors = get_corner_colors();
-        let edges_colors = get_edge_colors();
-        for corner in CORNER_FACELET {
-            let hashset = HashSet::from([chars[corner[0]], chars[corner[1]], chars[corner[2]]]);
-            if !corner_colors.contains(&hashset) {
-                for c in corner {
-                    invalid_idx.push(c)
-                }
-            } else if corners.contains(&hashset) {
-                for c in corner {
-                    invalid_idx.push(c)
-                }
-                for c in corners_idx[corners.iter().position(|x| *x == hashset).unwrap()].clone() {
-                    if !invalid_idx.contains(&c) {
-                        invalid_idx.push(c.clone())
-                    };
-                }
-            } else {
-                corners.push(hashset);
-                corners_idx.push([corner[0], corner[1], corner[2]])
-            }
-        }
-        for edge in EDGE_FACELET {
-            let hashset = HashSet::from([chars[edge[0]], chars[edge[1]]]);
-            if !edges_colors.contains(&hashset) || edges.contains(&hashset) {
-                for e in edge {
-                    invalid_idx.push(e)
-                }
-            } else {
-                edges.push(hashset)
-            }
-        }
-        let swap_options = invalid_idx.iter().combinations(2);
-        for k in 0..3 {
-            log!("Exploring depth {k}...");
-            let to_be_tried = swap_options.clone().combinations(k);
-            for option in to_be_tried {
-                let mut try_nota = chars.clone();
-                for permutation in option {
-                    (try_nota[*permutation[0]], try_nota[*permutation[1]]) =
-                        (try_nota[*permutation[1]], try_nota[*permutation[0]])
-                }
-                let facecube_option =
-                    FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
-                if !facecube_option.is_err() {
-                    let x = CubieCube::try_from(&facecube_option.unwrap());
-                    if !x.is_err() && x.unwrap().is_solvable() {
-                        return try_nota.iter().collect::<String>();
-                    }
-                }
-            }
-        }
-        nota
-    }
-
-    #[allow(dead_code)]
-    pub fn bruteforce_fixer(nota: String) -> (String, usize) {
-        const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
-        let chars = nota.chars().collect_vec();
-        let swap_options = (0..54).combinations(2);
-        for k in 0..10 {
-            let to_be_tried = swap_options.clone().combinations(k);
-            for option in to_be_tried {
-                let mut try_nota = chars.clone();
-                for permutation in option {
-                    if BANNED.contains(&permutation[0]) && BANNED.contains(&permutation[1]) {
-                        continue;
-                    }
-                    (try_nota[permutation[0]], try_nota[permutation[1]]) =
-                        (try_nota[permutation[1]], try_nota[permutation[0]])
-                }
-                let facecube_option =
-                    FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
-                if !facecube_option.is_err() {
-                    let x = CubieCube::try_from(&facecube_option.unwrap());
-                    if !x.is_err() && x.unwrap().is_solvable() {
-                        return (try_nota.iter().collect::<String>(), k);
-                    }
-                }
-            }
-        }
-        (nota, 0)
-    }
-
     pub fn print_graphical(nota: &str) {
         fn print_letter(idx: usize, chars: &Vec<char>) {
             let colors: HashMap<char, [u8; 3]> = HashMap::from([
@@ -296,79 +202,63 @@ impl Cube {
             println!();
         }
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use itertools::Itertools;
-    use kewb::generators::generate_random_state;
-    use kewb::FaceCube;
-    use rand::Rng;
-
-    use crate::cube::Cube;
-
-    const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
-    #[test]
-    fn test_fixer() {
-        let mut rng = rand::thread_rng();
-        let mut success_counter = 0;
-        let mut false_positives = 0;
-        let mut no_result = 0;
-        for _ in 0..100 {
-            let original = FaceCube::try_from(&generate_random_state())
-                .unwrap()
-                .to_string();
-            let mut jammed = original.chars().collect_vec();
-            for _ in 0..rng.gen_range(0..5) {
-                let i1 = rng.gen_range(0..54);
-                let i2 = rng.gen_range(0..54);
-                if BANNED.contains(&i1) || BANNED.contains(&i2) {
+    pub fn objective(&self, notation: String) -> f64 {
+        let char_vec = notation.chars().collect_vec();
+        let centre_position: Vec<usize> = vec![4, 22, 31, 49, 13, 40];
+        let mut score = 0.0;
+        for centre in centre_position {
+            let letter = char_vec[centre];
+            let facelet = self.facelet_rgb_values.get(centre).unwrap();
+            for (i, char) in char_vec.iter().enumerate() {
+                if i == centre {
                     continue;
                 }
-                (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
-            }
-            let jammed_string: String = jammed.into_iter().collect();
-            let fixed = Cube::fixer(jammed_string.clone());
-            if fixed == original {
-                success_counter += 1;
-            } else if fixed == jammed_string {
-                no_result += 1;
-            } else {
-                false_positives += 1;
+                if char.clone() == letter {
+                    let facelet2 = self.facelet_rgb_values.get(i).unwrap();
+                    score += facelet.distance_to(facelet2);
+                }
             }
         }
-        println!("Fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
+        return score;
     }
 
-    #[test]
-    fn test_bruteforce_fixer() {
-        let mut rng = rand::thread_rng();
-        let mut success_counter = 0;
-        let mut false_positives = 0;
-        let mut no_result = 0;
-        for _ in 0..100 {
-            let original = FaceCube::try_from(&generate_random_state())
-                .unwrap()
-                .to_string();
-            let mut jammed = original.chars().collect_vec();
-            for _ in 0..rng.gen_range(0..3) {
-                let i1 = rng.gen_range(0..54);
-                let i2 = rng.gen_range(0..54);
-                if BANNED.contains(&i1) || BANNED.contains(&i2) {
-                    continue;
+    #[allow(dead_code)]
+    pub fn fixer(&self, nota: String) -> (f64, String) {
+        const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
+        let chars = nota.chars().collect_vec();
+        let charclone = chars.clone();
+        let swap_options = (0..54)
+            .filter(|x| !BANNED.contains(x))
+            .combinations(2)
+            .filter(move |x| charclone[x[0]] != charclone[x[1]])
+            .collect_vec();
+        let mut min = (f64::INFINITY, nota);
+        for k in 0..4 {
+            println!("Exploring depth {k}");
+            let to_be_tried = swap_options.iter().combinations(k);
+            for option in to_be_tried {
+                let mut try_nota = chars.clone();
+                for permutation in option {
+                    (try_nota[permutation[0]], try_nota[permutation[1]]) =
+                        (try_nota[permutation[1]], try_nota[permutation[0]])
                 }
-                (jammed[i1], jammed[i2]) = (jammed[i2], jammed[i1]);
+                let facecube_option =
+                    FaceCube::try_from(try_nota.iter().collect::<String>().as_str());
+                if !facecube_option.is_err() {
+                    let x = CubieCube::try_from(&facecube_option.unwrap());
+                    if !x.is_err() && x.unwrap().is_solvable() {
+                        let score = self.objective(try_nota.iter().collect::<String>());
+                        if score < min.0 {
+                            min = (score, try_nota.iter().collect::<String>());
+                        }
+                    }
+                }
             }
-            let jammed_string: String = jammed.into_iter().collect();
-            let fixed = Cube::bruteforce_fixer(jammed_string.clone()).0;
-            if fixed == original {
-                success_counter += 1;
-            } else if fixed == jammed_string {
-                no_result += 1;
-            } else {
-                false_positives += 1;
+            if min.0 < f64::INFINITY {
+                break;
             }
         }
-        println!("Bruteforce fixer managed to fix {success_counter} out of 100 jammed configs ({false_positives} false positives, {no_result} without result)");
+        min
     }
 }

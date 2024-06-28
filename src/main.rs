@@ -96,8 +96,11 @@ fn main() -> Ev3Result<()> {
     let cube_notation = cube.to_notation();
     info!("Unfixed cube string is: {}", cube_notation);
     Cube::print_graphical(cube_notation.as_str());
-    let (fixed_notation, steps) = Cube::bruteforce_fixer(cube_notation);
-    success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
+    let (score, fixed_notation) = cube.fixer(cube_notation);
+    success!(
+        "Cube string fixed with {score} score is: {}",
+        fixed_notation
+    );
     Cube::print_graphical(fixed_notation.as_str());
 
     let solution = Cube::solve(fixed_notation);
@@ -121,9 +124,12 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
-    let (fixed_notation, steps) = Cube::bruteforce_fixer(cube_notation);
-    success!("Cube string fixed in {steps} steps is: {}", fixed_notation);
+    let (score, fixed_notation) = cube.fixer(cube_notation);
+    success!(
+        "Cube string fixed with {score} score is: {}",
+        fixed_notation
+    );
     Cube::print_graphical(fixed_notation.as_str());
-    // let solution = Cube::solve(fixed_notation);
-    // info!("Solution is {}", solution);
+    let solution = Cube::solve(fixed_notation);
+    info!("Solution is {}", solution);
 }

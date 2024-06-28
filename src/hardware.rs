@@ -135,7 +135,6 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
-
         fn median(data: &Vec<f64>) -> f64 {
             if data.len() == 0 {
                 return 0.;
@@ -169,10 +168,10 @@ impl Hardware {
         ];
         log!(
             "Scanned {}",
-            format!("{:?}", rgb.map(|x| { (x/1020.*255.) as u8 })).truecolor(
-                (rgb[0]/1020.*255.) as u8,
-                (rgb[1]/1020.*255.) as u8,
-                (rgb[2]/1020.*255.) as u8
+            format!("{:?}", rgb.map(|x| { (x / 1020. * 255.) as u8 })).truecolor(
+                (rgb[0] / 1020. * 255.) as u8,
+                (rgb[1] / 1020. * 255.) as u8,
+                (rgb[2] / 1020. * 255.) as u8
             )
         );
         let idx = SCAN_ORDER[data.curr_idx];
