@@ -135,21 +135,6 @@ impl Hardware {
     }
 
     pub fn sensor_scan(&self, data: &mut Cube) -> Ev3Result<()> {
-        fn median(data: &Vec<f64>) -> f64 {
-            if data.len() == 0 {
-                return 0.;
-            } else {
-                let mut data = data.clone();
-                data.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                let mid = data.len() / 2;
-                if data.len() % 2 == 0 {
-                    return (data[mid + 1] + data[mid]) / 2.;
-                } else {
-                    return data[mid];
-                }
-            }
-        }
-
         let mut scans = vec![[0.; 3]; self.iterations];
         for i in 0..self.iterations {
             let scan = self.color_sensor.get_rgb()?;
@@ -162,9 +147,9 @@ impl Hardware {
             (-self.movement) * self.iterations as i32,
         )?;
         let rgb = [
-            median(&scans.iter().map(|x| x[0]).collect::<Vec<f64>>()),
-            median(&scans.iter().map(|x| x[1]).collect::<Vec<f64>>()),
-            median(&scans.iter().map(|x| x[2]).collect::<Vec<f64>>()),
+            scans.iter().map(|x| x[0]).sum::<f64>() / self.iterations as f64,
+            scans.iter().map(|x| x[1]).sum::<f64>() / self.iterations as f64,
+            scans.iter().map(|x| x[2]).sum::<f64>() / self.iterations as f64,
         ];
         log!(
             "Scanned {}",
