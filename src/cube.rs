@@ -142,6 +142,7 @@ impl Cube {
         Ok(())
     }
 
+    /// Prints the colored patron of the cube in the stdout
     pub fn print_graphical(nota: &str) {
         fn print_letter(idx: usize, chars: &Vec<char>) {
             let colors: HashMap<char, [u8; 3]> = HashMap::from([
