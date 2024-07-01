@@ -23,31 +23,31 @@ mod fixer;
 mod hardware;
 
 #[derive(Parser, Debug)]
-#[clap(version, about, long_about = None)]
+#[command(version, about, long_about = None)]
 struct Args {
     /// File source if using a previous scan file. Will skip scan
-    #[clap(short, long)]
+    #[arg(short, long)]
     file: Option<String>,
 
     /// Number of color sensor scans per facelet
-    #[clap(long, default_value_t = 5)]
+    #[arg(long, default_value_t = 5)]
     iteration: usize,
 
     /// Movement between each color sensor scan
-    #[clap(long, default_value_t = 8)]
+    #[arg(long, default_value_t = 8)]
     movement: i32,
 
-    /// Sleep duration between each color sensor scan (in ms)
-    #[clap(long, default_value_t = 20)]
-    sleep: u32,
-
     /// Disables the solution application
-    #[clap(short, long)]
+    #[arg(short, long)]
     nosolve: bool,
 
     /// Enables saving scan to file
-    #[clap(short, long)]
+    #[arg(short, long)]
     save: bool,
+
+    /// Sleep duration between each color sensor scan (in ms)
+    #[arg(long, default_value_t = 20)]
+    sleep: u32,
 }
 
 fn create_cache() -> Result<(), Error> {
