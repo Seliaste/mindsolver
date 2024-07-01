@@ -50,6 +50,7 @@ struct Args {
     sleep: u32,
 }
 
+/// creates the kociemba cache file if it does not exist
 fn create_cache() -> Result<(), Error> {
     if !Path::new("./cache_file").exists() {
         info!("Creating cache...");
@@ -121,6 +122,7 @@ fn main() -> Ev3Result<()> {
     Ok(())
 }
 
+/// Ran when the user does not want to use the hardware. Used for testing purposes.
 fn no_hardware(args: Args) {
     let mut cube = Cube::init();
     cube.import(args.file.unwrap())
