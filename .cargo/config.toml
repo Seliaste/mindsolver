@@ -6,3 +6,7 @@ linker = "rust-lld"
 
 [profile.dev]
 opt-level = 3               # Use all optis.
+
+[profile.profiling]
+inherits = "release"
+debug = true
