@@ -12,9 +12,11 @@ pub const SCAN_ORDER: [usize; 54] = [
     40, 37, 36, 39, 42, 43, 44, 41, 38, // L
 ];
 
-pub const SIDE_INDEXES: [usize; 24] = [
+pub const SIDE_INDICES: [usize; 24] = [
     7, 5, 1, 3, 25, 23, 19, 21, 34, 32, 28, 30, 46, 48, 52, 50, 16, 14, 10, 12, 37, 39, 43, 41,
 ];
+
+pub const CENTRE_INDICES: [usize; 6] = [4, 22, 31, 49, 13, 40];
 
 #[rustfmt::skip]
 pub enum Facelet {

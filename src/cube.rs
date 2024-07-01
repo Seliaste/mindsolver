@@ -10,7 +10,7 @@ use kewb::{CubieCube, FaceCube, Solution, Solver};
 use paris::info;
 
 use crate::classification::{Classification, ColorPoint};
-use crate::constants::SIDE_INDEXES;
+use crate::constants::SIDE_INDICES;
 
 /// Represents the cube faces and state
 pub struct Cube {
@@ -67,7 +67,7 @@ impl Cube {
         for side in 0..54 {
             if !centre_index.clone().any(|x| x == &side) {
                 let face = facelets.get(side).unwrap();
-                if SIDE_INDEXES.contains(&face.index) {
+                if SIDE_INDICES.contains(&face.index) {
                     sides.push(face.clone());
                 } else {
                     corners.push(face.clone());

@@ -1,61 +1,73 @@
 use crate::classification::ColorPoint;
+use crate::constants::CENTRE_INDICES;
 use itertools::Itertools;
 use kewb::CubieCube;
 use kewb::FaceCube;
+use paris::log;
 
-fn scoring(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
+fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
     let char_vec = notation.chars().collect_vec();
-    let centre_position: Vec<usize> = vec![4, 22, 31, 49, 13, 40];
-    let mut score = 0.0;
-    for centre in centre_position {
+    return CENTRE_INDICES.iter().fold(0.0, |mut acc, &centre| {
         let letter = char_vec[centre];
         let facelet = rgb_values.get(centre).unwrap();
-        for (i, char) in char_vec.iter().enumerate() {
-            if i == centre {
-                continue;
-            }
-            if char.clone() == letter {
-                let facelet2 = rgb_values.get(i).unwrap();
-                score += facelet.distance_to(facelet2);
-            }
+        for (i, _) in char_vec
+            .iter()
+            .enumerate()
+            .filter(|(i, &char)| *i != centre && char.clone() == letter)
+        {
+            let facelet2 = rgb_values.get(i).unwrap();
+            acc += facelet.distance_to(facelet2);
         }
-    }
-    return score;
+        acc
+    });
 }
 
-pub fn fixer(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
-    const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
-    let chars = nota.chars().collect_vec();
-    let swap_options = (0..54)
-        .filter(|x| !BANNED.contains(x))
+fn generate_swap_options(chars: &Vec<char>) -> Vec<Vec<usize>> {
+    return (0..54)
+        .filter(|x| !CENTRE_INDICES.contains(x))
         .combinations(2)
         .filter(|x| &chars[x[0]] != &chars[x[1]])
         .collect_vec();
-    let mut min = (f64::INFINITY, nota);
+}
+
+fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
+    let mut chars = chars.clone();
+    for swap in swaps {
+        let (i, j) = (swap[0], swap[1]);
+        chars.swap(i, j);
+    }
+    chars.iter().collect()
+}
+
+/// Finds the optimal valid notation for the given (possibly invalid) notation
+///
+/// # Arguments
+/// * `rgb_values` - The previously scanned facelet RGB tuples.
+/// * `nota` - The initial notation string to be fixed.
+///
+/// # Returns
+/// A tuple containing the best score (f64) and its corresponding notation (String).
+pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
+    let chars = nota.chars().collect_vec();
+    let swap_options = generate_swap_options(&chars);
+    let mut best_score: (f64, String) = (f64::INFINITY, nota);
     for k in 0..4 {
-        println!("Exploring depth {k}");
+        log!("Exploring permutations at depth {k}");
         let to_be_tried = swap_options.iter().combinations(k);
         for option in to_be_tried {
-            let mut try_nota = chars.clone();
-            for permutation in option {
-                (try_nota[permutation[0]], try_nota[permutation[1]]) =
-                    (try_nota[permutation[1]], try_nota[permutation[0]])
-            }
-            let string = try_nota.iter().collect::<String>();
-            let facecube_option = FaceCube::try_from(string.as_str());
-            if !facecube_option.is_err() {
-                let x = CubieCube::try_from(&facecube_option.unwrap());
-                if !x.is_err() && x.unwrap().is_solvable() {
-                    let score = scoring(rgb_values, string.as_str());
-                    if score < min.0 {
-                        min = (score, string);
+            let permutted_string = apply_swaps(&chars, &option);
+            if let Ok(facecube) = FaceCube::try_from(permutted_string.as_str()) {
+                if CubieCube::try_from(&facecube).is_ok() {
+                    let score = calculate_score(rgb_values, &permutted_string);
+                    if score < best_score.0 {
+                        best_score = (score, permutted_string);
                     }
                 }
             }
         }
-        if min.0 < f64::INFINITY {
+        if best_score.0 < f64::INFINITY {
             break;
         }
     }
-    min
+    best_score
 }

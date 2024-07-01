@@ -13,7 +13,7 @@ use kewb::fs::write_table;
 use paris::{error, info, success};
 
 use crate::cube::Cube;
-use crate::fixer::fixer;
+use crate::fixer::find_optimal_fix;
 use crate::hardware::*;
 
 mod classification;
@@ -98,9 +98,9 @@ fn main() -> Ev3Result<()> {
     let cube_notation = cube.to_notation();
     info!("Unfixed cube string is: {}", cube_notation);
     Cube::print_graphical(cube_notation.as_str());
-    let (score, fixed_notation) = fixer(&cube.facelet_rgb_values, cube_notation);
+    let (score, fixed_notation) = find_optimal_fix(&cube.facelet_rgb_values, cube_notation);
     success!(
-        "Cube string fixed with {score} score is: {}",
+        "Cube string fixed with {score} accuracy (lower is better) is: {}",
         fixed_notation
     );
     Cube::print_graphical(fixed_notation.as_str());
@@ -126,9 +126,9 @@ fn no_hardware(args: Args) {
     cube.import(args.file.unwrap())
         .expect("Could not load scan file");
     let cube_notation = cube.to_notation();
-    let (score, fixed_notation) = fixer(&cube.facelet_rgb_values, cube_notation);
+    let (score, fixed_notation) = find_optimal_fix(&cube.facelet_rgb_values, cube_notation);
     success!(
-        "Cube string fixed with {score} score is: {}",
+        "Cube string fixed with {score} accuracy (lower is better) is: {}",
         fixed_notation
     );
     Cube::print_graphical(fixed_notation.as_str());
