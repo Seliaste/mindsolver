@@ -26,11 +26,10 @@ fn scoring(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
 pub fn fixer(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
     const BANNED: [usize; 6] = [4, 22, 31, 49, 13, 40];
     let chars = nota.chars().collect_vec();
-    let charclone = chars.clone();
     let swap_options = (0..54)
         .filter(|x| !BANNED.contains(x))
         .combinations(2)
-        .filter(move |x| charclone[x[0]] != charclone[x[1]])
+        .filter(|x| &chars[x[0]] != &chars[x[1]])
         .collect_vec();
     let mut min = (f64::INFINITY, nota);
     for k in 0..4 {
