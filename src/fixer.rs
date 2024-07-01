@@ -5,6 +5,14 @@ use kewb::CubieCube;
 use kewb::FaceCube;
 use paris::log;
 
+/// Calculates the score for a given notation based on the closeness to the RGB values of facelets.
+///
+/// # Arguments
+/// * `rgb_values` - The previously scanned facelet RGB tuples.
+/// * `notation` - The notation string to calculate the score for.
+///
+/// # Returns
+/// The score (f64) for the given notation.
 fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
     let char_vec = notation.chars().collect_vec();
     return CENTRE_INDICES.iter().fold(0.0, |mut acc, &centre| {
@@ -22,6 +30,14 @@ fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
     });
 }
 
+/// Generates all possible swap options for the given characters, 
+/// excluding the centre facelets and useless swaps of same characters.
+///
+/// # Arguments
+/// * `chars` - The characters to generate swap options for.
+///
+/// # Returns
+/// A vector of vectors, where each inner vector represents a swap option.
 fn generate_swap_options(chars: &Vec<char>) -> Vec<Vec<usize>> {
     return (0..54)
         .filter(|x| !CENTRE_INDICES.contains(x))
@@ -30,6 +46,14 @@ fn generate_swap_options(chars: &Vec<char>) -> Vec<Vec<usize>> {
         .collect_vec();
 }
 
+/// Applies the given swaps to the characters and returns the resulting string.
+///
+/// # Arguments
+/// * `chars` - The characters to apply the swaps to.
+/// * `swaps` - The swaps to apply.
+///
+/// # Returns
+/// The resulting string after applying the swaps.
 fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
     let mut chars = chars.clone();
     for swap in swaps {
@@ -39,7 +63,7 @@ fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
     chars.iter().collect()
 }
 
-/// Finds the optimal valid notation for the given (possibly invalid) notation
+/// Finds the optimal valid notation for the given (possibly invalid) notation.
 ///
 /// # Arguments
 /// * `rgb_values` - The previously scanned facelet RGB tuples.
