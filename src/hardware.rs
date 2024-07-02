@@ -146,17 +146,19 @@ impl Hardware {
             &self.sensor_motor,
             (-self.movement) * self.iterations as i32,
         )?;
-        let rgb = [
+        let mut rgb = [
             scans.iter().map(|x| x[0]).sum::<f64>() / self.iterations as f64,
             scans.iter().map(|x| x[1]).sum::<f64>() / self.iterations as f64,
             scans.iter().map(|x| x[2]).sum::<f64>() / self.iterations as f64,
         ];
+        let norm = rgb.iter().map(|x| x.powi(2)).sum::<f64>().sqrt();
+        rgb = [rgb[0]/norm, rgb[1]/norm, rgb[2]/norm];
         log!(
             "Scanned {}",
-            format!("{:?}", rgb.map(|x| { (x / 1020. * 255.) as u8 })).truecolor(
-                (rgb[0] / 1020. * 255.) as u8,
-                (rgb[1] / 1020. * 255.) as u8,
-                (rgb[2] / 1020. * 255.) as u8
+            format!("{:?}", rgb.map(|x| { (x * 255.) as u8 })).truecolor(
+                (rgb[0] * 255.) as u8,
+                (rgb[1] * 255.) as u8,
+                (rgb[2] * 255.) as u8
             )
         );
         let idx = SCAN_ORDER[data.curr_idx];
@@ -230,26 +232,18 @@ impl Hardware {
         }
         Hardware::run_for_deg(&self.sensor_motor, -670)?;
         self.sensor_scan(cube)?;
-        let offsets = [100, -20, 10, 10];
+        let offsets = [100, -20, 5, 10];
         for i in 0..4 {
             Hardware::run_for_deg(&self.sensor_motor, offsets[i])?;
             self.sensor_scan(cube)?;
-            if i >= 2 {
-                Self::run_for_rot(&self.base_motor, 0.425)?;
-            } else {
-                self.rot_base45()?;
-            }
+            self.rot_base45()?;
             if i == 0 {
                 Hardware::run_for_deg(&self.sensor_motor, 20)?;
             } else {
                 Hardware::run_for_deg(&self.sensor_motor, 40)?;
             }
             self.sensor_scan(cube)?;
-            if i >= 2 {
-                Self::run_for_rot(&self.base_motor, 0.325)?;
-            } else {
-                self.rot_base45()?;
-            }
+            self.rot_base45()?;
             Hardware::run_for_deg(&self.sensor_motor, -40)?;
         }
         self.reset_sensor_position()?;
