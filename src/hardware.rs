@@ -152,7 +152,7 @@ impl Hardware {
             scans.iter().map(|x| x[2]).sum::<f64>() / self.iterations as f64,
         ];
         let norm = rgb.iter().map(|x| x.powi(2)).sum::<f64>().sqrt();
-        rgb = [rgb[0]/norm, rgb[1]/norm, rgb[2]/norm];
+        rgb = [rgb[0] / norm, rgb[1] / norm, rgb[2] / norm];
         log!(
             "Scanned {}",
             format!("{:?}", rgb.map(|x| { (x * 255.) as u8 })).truecolor(

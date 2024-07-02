@@ -30,7 +30,7 @@ fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
     });
 }
 
-/// Generates all possible swap options for the given characters, 
+/// Generates all possible swap options for the given characters,
 /// excluding the centre facelets and useless swaps of same characters.
 ///
 /// # Arguments
@@ -98,20 +98,23 @@ pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, Str
 
 #[cfg(test)]
 mod tests {
-    use std::fs::read_dir;
     use crate::cube::Cube;
     use crate::fixer;
+    use std::fs::read_dir;
 
     #[test]
     fn official_solved_cube_test() {
         let mut tested = 0;
         let mut correct = 0;
-        'outer:for entry in read_dir("scan_test_files/official_cube_solved").unwrap() {
-            if entry.is_err() {continue;}
+        'outer: for entry in read_dir("scan_test_files/official_cube_solved").unwrap() {
+            if entry.is_err() {
+                continue;
+            }
             let file = entry.unwrap();
             let mut cube = Cube::init();
-            cube.import(file.path().to_str().unwrap().to_string()).expect("Could not load scan file");
-            tested+=1;
+            cube.import(file.path().to_str().unwrap().to_string())
+                .expect("Could not load scan file");
+            tested += 1;
             correct += 1;
             let cube_notation = cube.to_notation();
             let fixed = fixer::find_optimal_fix(&cube.facelet_rgb_values, cube_notation.clone());
@@ -121,7 +124,7 @@ mod tests {
             for char in fixed.1.chars() {
                 if char == current {
                     consecutive += 1;
-                } else if consecutive == 9{
+                } else if consecutive == 9 {
                     consecutive = 1;
                     current = char;
                 } else {

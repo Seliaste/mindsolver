@@ -25,7 +25,8 @@ impl PartialEq for ColorPoint {
 
 impl ColorPoint {
     pub fn distance_to(&self, other: &Self) -> f64 {
-    ((self.r - other.r).powi(2) /2. + (self.g - other.g).powi(2) + (self.b - other.b).powi(2)).sqrt()
+        ((self.r - other.r).powi(2) / 2. + (self.g - other.g).powi(2) + (self.b - other.b).powi(2))
+            .sqrt()
     }
 
     /// Returns an array of the three coordinates
