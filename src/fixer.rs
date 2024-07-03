@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::classification::ColorPoint;
 use crate::constants::CENTRE_INDICES;
 use itertools::Itertools;
@@ -5,7 +7,7 @@ use kewb::CubieCube;
 use kewb::FaceCube;
 use paris::log;
 
-/// Calculates the score for a given notation based on the closeness to the RGB values of facelets.
+/// Calculates the score for a given notation based on the closeness to the mean RGB values of facelets.
 ///
 /// # Arguments
 /// * `rgb_values` - The previously scanned facelet RGB tuples.
@@ -14,20 +16,31 @@ use paris::log;
 /// # Returns
 /// The score (f64) for the given notation.
 fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
-    let char_vec = notation.chars().collect_vec();
-    return CENTRE_INDICES.iter().fold(0.0, |mut acc, &centre| {
-        let letter = char_vec[centre];
-        let facelet = rgb_values.get(centre).unwrap();
-        for (i, _) in char_vec
+    // get groups of rgb values
+    let chars = notation.chars().collect_vec();
+    let mut groups = HashMap::new();
+    for (i, color) in rgb_values.iter().enumerate() {
+        let facelet = chars[i];
+        groups.entry(facelet).or_insert(vec![]).push(color);
+    }
+    // calculate the sum of mahlanobis distances
+    let mut score = 0.;
+    for group in groups.values() {
+        let mean = group
             .iter()
-            .enumerate()
-            .filter(|(i, &char)| *i != centre && char.clone() == letter)
-        {
-            let facelet2 = rgb_values.get(i).unwrap();
-            acc += facelet.distance_to(facelet2);
+            .fold([0., 0., 0.], |acc, x| {
+                [acc[0] + x.r, acc[1] + x.g, acc[2] + x.b]
+            })
+            .map(|x| x / group.len() as f64);
+        for color in group {
+            let distance = (0..3)
+                .map(|i| (color.to_array()[i] - mean[i]).powi(2))
+                .sum::<f64>()
+                .sqrt();
+            score += distance;
         }
-        acc
-    });
+    }
+    score
 }
 
 /// Generates all possible swap options for the given characters,
@@ -44,6 +57,17 @@ fn generate_swap_options(chars: &Vec<char>) -> Vec<Vec<usize>> {
         .combinations(2)
         .filter(|x| &chars[x[0]] != &chars[x[1]])
         .collect_vec();
+}
+
+fn generate_swap_weights(rgb_values: &Vec<ColorPoint>, notation: &str ,swaps: &Vec<Vec<usize>>) -> Vec<i32> {
+    let mut weights = vec![];
+    for swap in swaps{
+        let mut chars = notation.chars().collect_vec();
+        let (i, j) = (swap[0], swap[1]);
+        chars.swap(i, j);
+        weights.push((calculate_score(rgb_values, chars.iter().collect::<String>().as_str())*100.) as i32);
+    }
+    weights
 }
 
 /// Applies the given swaps to the characters and returns the resulting string.
@@ -74,10 +98,14 @@ fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
 pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
     let chars = nota.chars().collect_vec();
     let swap_options = generate_swap_options(&chars);
+    let weigts = generate_swap_weights(rgb_values, &nota, &swap_options);
+    let quartile_weight = weigts.iter().sorted().nth(weigts.len()/16).unwrap();
+    let swap_elagated = swap_options.iter().enumerate().filter(|x| {weigts[x.0] < *quartile_weight}).map(|x| x.1.clone()).collect_vec();
+    log!("Optimized swaps #: {}, before: {}", swap_elagated.len(), swap_options.len());
     let mut best_score: (f64, String) = (f64::INFINITY, nota);
-    for k in 0..4 {
+    for k in 0..5 {
         log!("Exploring permutations at depth {k}");
-        let to_be_tried = swap_options.iter().combinations(k);
+        let to_be_tried = swap_elagated.iter().combinations(k);
         for option in to_be_tried {
             let permutted_string = apply_swaps(&chars, &option);
             if let Ok(facecube) = FaceCube::try_from(permutted_string.as_str()) {
@@ -88,9 +116,6 @@ pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, Str
                     }
                 }
             }
-        }
-        if best_score.0 < f64::INFINITY {
-            break;
         }
     }
     best_score
