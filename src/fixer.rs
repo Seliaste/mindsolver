@@ -23,7 +23,7 @@ fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
         let facelet = chars[i];
         groups.entry(facelet).or_insert(vec![]).push(color);
     }
-    // calculate the sum of mahlanobis distances
+    // calculate the sum of distances to the mean of the group
     let mut score = 0.;
     for group in groups.values() {
         let mean = group
