@@ -13,8 +13,8 @@ use kewb::fs::write_table;
 use paris::{error, info, success};
 
 use crate::cube::Cube;
-use crate::fixer::find_optimal_fix;
 use crate::hardware::*;
+use fixer::find_optimal_fix;
 
 mod classification;
 mod constants;

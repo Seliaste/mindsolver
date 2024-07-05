@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::classification::ColorPoint;
 use crate::constants::CENTRE_INDICES;
+use crate::constants::SIDE_INDICES;
 use itertools::Itertools;
 use kewb::CubieCube;
 use kewb::FaceCube;
@@ -53,21 +54,11 @@ fn calculate_score(rgb_values: &Vec<ColorPoint>, notation: &str) -> f64 {
 /// A vector of vectors, where each inner vector represents a swap option.
 fn generate_swap_options(chars: &Vec<char>) -> Vec<Vec<usize>> {
     return (0..54)
-        .filter(|x| !CENTRE_INDICES.contains(x))
         .combinations(2)
         .filter(|x| &chars[x[0]] != &chars[x[1]])
+        .filter(|x| CENTRE_INDICES.contains(&x[0]) == CENTRE_INDICES.contains(&x[1]))
+        .filter(|x| SIDE_INDICES.contains(&x[0]) == SIDE_INDICES.contains(&x[1]))
         .collect_vec();
-}
-
-fn generate_swap_weights(rgb_values: &Vec<ColorPoint>, notation: &str ,swaps: &Vec<Vec<usize>>) -> Vec<i32> {
-    let mut weights = vec![];
-    for swap in swaps{
-        let mut chars = notation.chars().collect_vec();
-        let (i, j) = (swap[0], swap[1]);
-        chars.swap(i, j);
-        weights.push((calculate_score(rgb_values, chars.iter().collect::<String>().as_str())*100.) as i32);
-    }
-    weights
 }
 
 /// Applies the given swaps to the characters and returns the resulting string.
@@ -96,16 +87,44 @@ fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
 /// # Returns
 /// A tuple containing the best score (f64) and its corresponding notation (String).
 pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
-    let chars = nota.chars().collect_vec();
-    let swap_options = generate_swap_options(&chars);
-    let weigts = generate_swap_weights(rgb_values, &nota, &swap_options);
-    let quartile_weight = weigts.iter().sorted().nth(weigts.len()/16).unwrap();
-    let swap_elagated = swap_options.iter().enumerate().filter(|x| {weigts[x.0] < *quartile_weight}).map(|x| x.1.clone()).collect_vec();
-    log!("Optimized swaps #: {}, before: {}", swap_elagated.len(), swap_options.len());
-    let mut best_score: (f64, String) = (f64::INFINITY, nota);
-    for k in 0..5 {
+    let mut chars = nota.chars().collect_vec();
+    let mut swap_options = generate_swap_options(&chars);
+    // find local optimum
+    let mut best_score: (f64, String) = (f64::INFINITY, nota.clone());
+    let mut continue_search = true;
+    while continue_search {
+        let mut best_local_score: (f64, String) = (f64::INFINITY, nota.clone());
+        for swap in swap_options.clone() {
+            let permutted_string = apply_swaps(&chars, &vec![&swap]);
+            let score = calculate_score(rgb_values, &permutted_string);
+            if score < best_local_score.0 {
+                best_local_score = (score, permutted_string.clone());
+            }
+        }
+        if best_local_score.0 < best_score.0 {
+            best_score = best_local_score;
+            chars = best_score.1.chars().collect_vec();
+        } else {
+            continue_search = false;
+        }
+    }
+    // find closest fix to the local minimum
+    let mut best_score: (f64, String) = (f64::INFINITY, chars.iter().collect());
+    let epsilon: i32 = swap_options
+        .iter()
+        .map(|x| (rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000.) as i32)
+        .sorted()
+        .nth(swap_options.len() / 32)
+        .unwrap();
+    println!("Epsilon is: {}", epsilon);
+    swap_options = swap_options
+        .iter()
+        .filter(|x| rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000. < epsilon as f64)
+        .map(|x| x.clone())
+        .collect_vec();
+    for k in 0..6 {
         log!("Exploring permutations at depth {k}");
-        let to_be_tried = swap_elagated.iter().combinations(k);
+        let to_be_tried = swap_options.iter().combinations(k);
         for option in to_be_tried {
             let permutted_string = apply_swaps(&chars, &option);
             if let Ok(facecube) = FaceCube::try_from(permutted_string.as_str()) {
