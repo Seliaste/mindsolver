@@ -88,7 +88,7 @@ fn apply_swaps(chars: &Vec<char>, swaps: &Vec<&Vec<usize>>) -> String {
 /// A tuple containing the best score (f64) and its corresponding notation (String).
 pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, String) {
     let mut chars = nota.chars().collect_vec();
-    let mut swap_options = generate_swap_options(&chars);
+    let swap_options = generate_swap_options(&chars);
     // find local optimum
     let mut best_score: (f64, String) = (f64::INFINITY, nota.clone());
     let mut continue_search = true;
@@ -110,20 +110,25 @@ pub fn find_optimal_fix(rgb_values: &Vec<ColorPoint>, nota: String) -> (f64, Str
     }
     // find closest fix to the local minimum
     let mut best_score: (f64, String) = (f64::INFINITY, chars.iter().collect());
-    let epsilon: i32 = swap_options
-        .iter()
-        .map(|x| (rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000.) as i32)
-        .sorted()
-        .nth(swap_options.len() / 32)
-        .unwrap();
-    println!("Epsilon is: {}", epsilon);
-    swap_options = swap_options
-        .iter()
-        .filter(|x| rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000. < epsilon as f64)
-        .map(|x| x.clone())
-        .collect_vec();
-    for k in 0..6 {
+
+    for k in 0..100_usize {
         log!("Exploring permutations at depth {k}");
+        let mut swap_options = generate_swap_options(&chars);
+        if (swap_options.len() as i32 / (2_i32).pow(k as u32) - 1) < 0 {
+            break;
+        }
+        let epsilon: i32 = swap_options
+            .iter()
+            .map(|x| (rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000.) as i32)
+            .sorted()
+            .nth((swap_options.len() / (2_i32).pow(k as u32) as usize) - 1)
+            .unwrap();
+        println!("Epsilon is: {}", epsilon);
+        swap_options = swap_options
+            .iter()
+            .filter(|x| rgb_values[x[0]].distance_to(&rgb_values[x[1]]) * 1000. < epsilon as f64)
+            .map(|x| x.clone())
+            .collect_vec();
         let to_be_tried = swap_options.iter().combinations(k);
         for option in to_be_tried {
             let permutted_string = apply_swaps(&chars, &option);
